@@ -271,3 +271,9 @@ Public pages reviewed during proposal preparation:
 ## Resume guidance
 
 Read this proposal before implementing or revising scope. Preserve the real-data requirement, Atlas decision, zero-cost preference, and local-first delivery. Resolve routine implementation choices autonomously. Never present planned source access, untested functionality, or missing data as verified. Track subsequent material decisions in this document so it remains a useful project reference.
+
+## Implementation update — 11 September 2026
+
+The user chose one-time snapshot operation. The implemented POC uses 77 real ISRO notices in Atlas, including two PDF-verified detailed notices, and supports further private reviewed imports. No continuous API/feed integration is active. Detailed source limits and current implementation behavior are documented in [README.md](README.md) and [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md); these supersede earlier suggestions about automatic monitoring for the current demo.
+
+The preparation, import, version-impact and private-workspace workflows are implemented. No real official amendment pair or award dataset was preloaded; isolated tests verify those mechanisms without fictional demo catalogue records. Use [docs/DEMO_WALKTHROUGH.md](docs/DEMO_WALKTHROUGH.md) for the presentation.

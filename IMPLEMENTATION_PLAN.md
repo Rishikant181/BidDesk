@@ -1,7 +1,7 @@
 # BidDesk — One-pass implementation plan
 
 Date: 2026-09-11
-Status: planning complete; application implementation not started.
+Status: application implemented; local Atlas and browser verification completed. See the execution record below for source limitations.
 Product scope: [PROPOSAL.md](./PROPOSAL.md).
 
 ## 1. Execution contract
@@ -14,9 +14,9 @@ Work sequentially unless the user explicitly requests delegation. Preserve exist
 
 ## 2. Current repository and prerequisites
 
-- Repository currently contains PROPOSAL.md and this plan; no application exists.
+- Repository now contains the Next.js application, scripts, real snapshot, tests, and handoff documentation.
 - Planning environment has Node.js v24.18.0 and npm 11.16.0. Verify dependency compatibility when scaffolding and record the chosen Node version.
-- The user replied “yes” to the Atlas readiness question; interpreted as a cluster being available. Credentials and connectivity have not been verified.
+- Atlas connectivity, indexes, authentication, and persistence have been verified with the supplied local configuration.
 - User supplies the Atlas URI through ignored `.env.local`, not chat or a committed file. Use a dedicated BidDesk database and a database user restricted to it.
 - Configure local IP access in Atlas as needed. Do not silently broaden network access.
 - Generate the authentication secret locally; never print it or database credentials in logs.
@@ -265,7 +265,7 @@ Suggested instruction for the implementation turn:
 
 > Implement BidDesk in this repository according to PROPOSAL.md and IMPLEMENTATION_PLAN.md. Complete the implementation and verification in one focused run, making routine implementation decisions autonomously. Use real Indian tender data and Atlas persistence, keep paid services and deployment out of scope, and preserve source provenance and private workspace isolation. Check configuration and source feasibility early. Use imports when automated source access is unavailable; never substitute fake catalogue data. Finish with setup instructions, verified coverage, test results, and a repeatable demo walkthrough. Report external blockers and unverified behavior explicitly.
 
-This handoff text is a future execution brief. Saving this plan does not itself start application implementation.
+The execution brief above was subsequently authorized and implemented.
 
 ## 13. Documentation checked while planning
 
@@ -281,10 +281,25 @@ These references support the selected integration approach. Package versions, At
 
 - [x] Product proposal reviewed and repository inspected.
 - [x] One-pass implementation plan saved.
-- [ ] Configuration/source feasibility checked.
-- [ ] Foundation and persistent workflow implemented.
-- [ ] Discovery/import complete.
-- [ ] Eligibility and preparation complete.
-- [ ] Amendment impact complete.
-- [ ] Derived screens and presentation polish complete.
-- [ ] Verification and handoff complete.
+- [x] Configuration/source feasibility checked.
+- [x] Foundation and persistent workflow implemented.
+- [x] Discovery/import complete.
+- [x] Eligibility and preparation complete.
+- [x] Amendment impact implemented and tested with isolated fixtures; genuine published pair unavailable.
+- [x] Derived screens and presentation polish complete.
+- [x] Verification and handoff complete; see README and source/demo documentation.
+
+## Execution record — 11 September 2026
+
+- The user selected a **one-time real snapshot** after discussing ongoing feeds and public APIs. No scheduled collection or API integration is enabled. `docs/TENDER_API_RESEARCH.md` is reference material only.
+- Built Next.js 16.3.4 / React 19.3.0 / TypeScript 6.0.3 with Better Auth 1.7.4, MongoDB driver 7.6.0, PDF.js 6.3.289, Zod 4.6.2, and Tailwind 4.3.3. The lockfile records exact packages. Runtime verified on Node 24.18.0.
+- Verified the supplied Atlas configuration and imported **77 real ISRO notices**. Two notices were enriched against original PDFs; the second demo import reported 2 updated, 75 unchanged, 0 rejected. Missing amounts and reference-based titles remain explicit on other records.
+- Shared catalogue, private accounts/imports/reviews, discovery/filter/export/compare, company evidence, eligibility review, bids/tasks, calendar, notifications, PDF/CSV import, and award import/search are implemented.
+- Imports, immutable versions and amendment effects use Atlas transactions. Same-content retries do not duplicate versions/tasks/notifications. Content reversion retains intermediate history. Bid saves reject stale revisions.
+- Browser tests use a new randomly named Atlas test database and remove that database at the end. Test-only tenders/accounts/awards are not placed in the demo database.
+- Production build uses the supported `next build --webpack` option after Turbopack encountered a build-environment socket restriction. TypeScript, ESLint, and 24 unit checks passed. The development browser suite passed, including the actual PRL PDF extraction/import. Final production browser results are in `docs/VERIFICATION.md`.
+- No genuine official amendment pair or verified award dataset is preloaded. The corresponding workflows are implemented; amendment behavior is rehearsed using isolated fixtures. Metadata enrichment is labelled as enrichment, not an official corrigendum.
+- Architectural simplifications: one catch-all workspace route with a fixed route allowlist; small shared component modules; no persisted assessment cache (assessments recalculate from current inputs); local PDF originals plus persisted text; capped small-catalogue reads. See README for limits, including large version-response pagination needed before hosted use at scale.
+- No deployment, payment setup, paid inference service, nationwide crawler, or international feed was introduced.
+
+Handoff: [README.md](README.md), [DATA_SOURCES.md](docs/DATA_SOURCES.md), [DEMO_WALKTHROUGH.md](docs/DEMO_WALKTHROUGH.md), and [VERIFICATION.md](docs/VERIFICATION.md).
