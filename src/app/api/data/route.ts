@@ -1,3 +1,6 @@
+import {searchSource,searchSchema,sourceOptions} from "@/lib/tenderhut/client";
+import {asTender} from "@/lib/tenderhut/normalize";
+import {materialize} from "@/lib/tenderhut/store";
 import { randomUUID } from "node:crypto";
 import { z, ZodError } from "zod";
 import type { Filter } from "mongodb";
@@ -30,13 +33,20 @@ function failure(e: unknown) {
 export async function GET(req:Request) {
   try {
     const u=await user(req), db=await getDb(), p=new URL(req.url).searchParams, mode=p.get("mode") || "workspace";
+    if (mode==="source-options") return json(await sourceOptions());
+    if (mode==="tenders" && p.get("favorites")!=="true" && p.get("local")!=="true") {
+      const search=searchSchema.parse(Object.fromEntries([...p].filter(([,v])=>v!=="")));
+      let result;try{result=await searchSource(search);}catch{return json({error:"source portal is unavailable and this search has no cached results. Try again on your next visit."},{status:503});}
+      return json({tenders:result.observations.map(asTender),total:result.total,page:search.page,pages:Math.ceil(result.total/search.size),freshness:result.freshness});
+    }
     if (mode==="tender") {
+      const remote=p.get("id")?.startsWith("th-")?await materialize(p.get("id")!,p.get("cached")!=="true"):null;
       const t=await tenderFor(p.get("id") || "",u.id);
       const [versions,requirements,review,bid]=await Promise.all([
         db.collection<Version>("versions").find({tenderId:t.id}).sort({observedAt:-1}).limit(50).toArray(),effectiveRequirements(t,u.id),
         db.collection("reviews").findOne({ownerId:u.id,tenderId:t.id}),db.collection<Bid>("bids").findOne({ownerId:u.id,tenderId:t.id}),
       ]);
-      return json({tender:t,versions,requirements,notes:review?.notes || "",bid});
+      return json({tender:t,versions,requirements,notes:review?.notes || "",bid,freshness:remote?.freshness});
     }
     if (mode==="tenders" || mode==="export") {
       const and: Filter<Tender>[]=[visibleTo(u.id)];
@@ -62,7 +72,7 @@ export async function GET(req:Request) {
     const [company,bids,favorites,notifications,tenders,awards,runs]=await Promise.all([
       db.collection("companies").findOne({ownerId:u.id}),db.collection<Bid>("bids").find({ownerId:u.id}).sort({updatedAt:-1}).limit(200).toArray(),
       db.collection("favorites").find({ownerId:u.id}).toArray(),db.collection("notifications").find({ownerId:u.id}).sort({createdAt:-1}).limit(50).toArray(),
-      db.collection<Tender>("tenders").find(visibleTo(u.id),{projection:{documents:0,requirements:0}}).sort({closesAt:1}).limit(2000).toArray(),
+      db.collection<Tender>("tenders").find({$and:[visibleTo(u.id),{$or:[{identityKind:"tenderhut"},{ownerId:u.id}]}]},{projection:{documents:0,requirements:0}}).sort({closesAt:1}).limit(2000).toArray(),
       db.collection<Award>("awards").find({$or:[{ownerId:null},{ownerId:u.id}]}).limit(500).toArray(),
       db.collection("importRuns").find({$or:[{ownerId:null},{ownerId:u.id}]}).sort({at:-1}).limit(8).toArray(),
     ]);
@@ -77,6 +87,7 @@ export async function POST(req:Request) {
     const u=await user(req), db=await getDb();
     const text=await req.text(); if(text.length>2000000) return json({error:"Import text exceeds 2 MB"},{status:413});
     const body=JSON.parse(text), action=z.string().parse(body.action), now=new Date().toISOString();
+    if(["favorite","bid.create"].includes(action)&&typeof body.id==="string"&&body.id.startsWith("th-"))await materialize(body.id);
     if(action==="company") {
       const company=companySchema.parse(body.company);
       await db.collection<Company & {ownerId:string}>("companies").updateOne({ownerId:u.id},{$set:{...company,ownerId:u.id}},{upsert:true});

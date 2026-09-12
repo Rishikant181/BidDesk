@@ -1,3 +1,22 @@
+## Direct AI actions follow-up
+
+Removed repeated sharing-consent UI and API checks as requested. Document extraction, eligibility review, import suggestions and profile matching run when clicked. Typecheck, lint, 62 unit tests and both AI browser tests passed (50.2 seconds). Browser checks now send no consent field, including private-access denial and quota/deduplication checks. Source-fact review remains a separate workflow.
+
+# Current verification — TenderHut increment, 12 September 2026
+
+- Production Webpack build, TypeScript, ESLint and diff whitespace checks passed.
+- Unit suite: **62 passed** across five files, including source normalization, profile search planning, ZIP validation and the extension credential boundary.
+- Full production browser suite: **5 passed, 1 skipped (2.4 minutes)**. The skipped case needs an optional local PDF fixture. The linked official PDF browser test and transferred ZIP/PDF extraction test both passed.
+- Browser coverage includes first-visit discovery, upstream search/pagination metadata, refresh on navigation/reload, no idle polling, stale-cache fallback, stable saved identities/versions, private profile matching, attachment pairing/replay rejection, PDF extraction and cross-account file isolation. Existing private preparation and AI review journeys also passed.
+- Actual anonymous TenderHut listing/filter metadata/search/detail requests passed. A bounded live software query and one real Gemini explanation passed source-quote grounding; this does not establish exhaustive retrieval or ranking accuracy.
+- Actual signed-in Firefox extension downloading remains **a manual check**. Automated tests cover its credential boundary and the local import flow; no user tokens were replayed.
+
+Reproduce with `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, then `BIDDESK_E2E_PRODUCTION=1 npm run test:e2e`. Browser fixtures are restricted to an isolated random test database and cleaned by teardown. Run `npx tsx scripts/tenderhut-smoke.ts` for a small live public-source check; adding `--ai` consumes a Gemini explanation using public metadata.
+
+See [current implementation notes](TENDERHUT_IMPLEMENTATION_NOTES.md) for setup, file map and limitations. Earlier results below are historical and describe the previous snapshot implementation.
+
+---
+
 # Verification — 11 September 2026
 
 ## Passed

@@ -1,0 +1,5 @@
+/* global browser */
+let code='';
+const status=document.getElementById('status'),send=document.getElementById('send');
+document.getElementById('inspect').onclick=async()=>{try{code=document.getElementById('code').value.trim();const g=await browser.runtime.sendMessage({action:'inspect',code});document.getElementById('destination').textContent=`Tender: ${g.title}. Destination: ${g.origin}. source portal bid: ${g.bidId}.`;send.hidden=false;}catch{status.textContent='Invalid pairing code. Generate a new code inside BidDesk.';send.hidden=true;}};
+send.onclick=async()=>{send.disabled=true;status.textContent='Downloading and transferring. Keep this window open for the result.';try{const r=await browser.runtime.sendMessage({action:'transfer',code});status.textContent=r.ok?'Transfer complete. Return to BidDesk and choose Review transferred files.':r.error;document.getElementById('code').value='';code='';}catch{status.textContent='Transfer failed. Generate a new code and retry, or download manually.';}finally{send.disabled=false;}};

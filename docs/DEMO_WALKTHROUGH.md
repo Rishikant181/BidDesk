@@ -1,53 +1,35 @@
 # BidDesk demo walkthrough
 
-Allow about 8–10 minutes. Start Atlas connectivity and the local app before presenting. See README for commands. Use a real account and your own company information; there is no prebuilt fictional workspace.
+Current flow: 12 September 2026. Start with `npm run dev`, then open `http://localhost:3000`. Keep the configured `.env.local`; snapshot import is not required.
 
-## 1. Introduce the scope
+## 1. Discovery
 
-“BidDesk helps an Indian supplier discover tenders, review the requirements, and prepare a bid in one workspace. This POC uses 77 real ISRO notices captured on 11 September 2026. It is a snapshot; the official source must be checked before bidding.”
+Sign in or create an account. Discovery loads public the source portal results immediately. Search for an offering, narrow by state/category/value or use the source/buyer filters, and change pages. Point out the source retrieval time and original-source links. Reloading/navigation rechecks the source; leaving the page open does not poll. Export contains the displayed page only.
 
-Show Overview and its source date. Counts are calculated from imported records and private preparation activity. Empty metrics are expected in a new account.
+## 2. Match the company
 
-## 2. Find and compare opportunities
+Open Company profile. Save a public/non-sensitive capability description, offerings and regions. Return to discovery → **Find tenders matching my profile**. Approve the selected input and run matching.
 
-Open Discover. Search `RFSoC` for the verified PRL supply notice. Open Quick preview, then the full notice. Show the official reference, due time, and original PDF link. Its missing value remains “Not published.”
+Show search terms, retrieved/prepared counts, match reasons and source excerpts. The app searches upstream before ranking; it does not promise an exhaustive search, qualification or win probability. A quota failure leaves retrieved opportunities available in basic relevance order.
 
-Search `5154` for the SAC lab partition work. Show INR 4.27 lakh, INR 8,540 EMD, original source, and source notes. Use Gujarat or Civil works filters. Save both opportunities, clear filters, then use Saved and select the two comparison checkboxes. Compare financial commitments, deadlines and any reviewed eligibility requirements. Export the list to CSV.
+## 3. Review and prepare
 
-The rest of the listing includes reference-based titles; explain that broad metadata import and detailed document review are separate steps.
+Open a result. Its public HTML page is fetched and available fields refreshed. Inspect **Source fields and observation dates**, then **Open official tender**. A generic portal may require finding the displayed reference manually.
 
-## 3. Prepare a real bid
+Save the tender, add private notes, and start bid preparation. Add tasks, owners and internal deadlines. Eligibility remains unknown until supported requirements and evidence are reviewed. Source content changes preserve a version and can flag preparation work.
 
-Enter your company profile, regions, and documented past work. Do not invent financial evidence for a passing indicator.
+## 4. Optional attachments and AI review
 
-Open the SAC notice → Eligibility → Review requirements. Read NIT pages 2–3 in the official source. The similar-work requirement is a composite condition with alternatives; the correct automated outcome is “needs review.” Confirm the source reference only after reviewing it. Review the EMD/exemption task against clauses 4 and 6.
+Manual route: download a public PDF normally, then use Analysis → Upload a PDF instead. Select pages, click Analyze with Gemini, review exact excerpts and save selected private findings. Eligibility review compares confirmed requirements to selected company evidence; human judgments remain separate.
 
-Select Start preparing this bid. Assign responsibility, add an internal deadline, and retain document references in task notes. Choose a pipeline stage and record a bid/no-bid rationale. Save changes, reload to demonstrate persistence, and export the checklist. Marking a task complete means preparation progress, not official qualification.
+Extension route: Documents → **Set up the Firefox extension**. Download/extract its package and temporarily install `manifest.json` through Firefox's `about:debugging`. Sign in to the source portal. Generate a BidDesk pairing code, paste it into the extension on the the source portal tab, check the destination/tender and explicitly transfer the ZIP. Return to BidDesk → **Review transferred files**, select a PDF to read, then proceed through the same AI review. Unsupported file types are download-only.
 
-Show Calendar and My Bids. Personal submitted/won/lost stages are not official procurement awards.
+The real authenticated Firefox download needs a manual smoke check before presenting this optional route. Keep manual PDF upload ready as fallback. Do not paste the source portal cookies or tokens into BidDesk, chat or configuration.
 
-## 4. Bring in another real notice
+## What to explain honestly
 
-Download a text PDF from its official source beforehand. Open Import a tender → Read a PDF. The browser extracts page text locally. Expand the extracted pages, enter the actual title/reference/source and dates, then confirm the reviewed information and import it. Open the private record and its Documents tab.
-
-For spreadsheets, use Import a spreadsheet → Download CSV header template. Map columns, review row validation, then import. Repeating the same source/reference/content is reported unchanged.
-
-A scanned/no-text PDF needs manual entry; OCR is outside this demo. Original PDF binaries stay on the device; extracted text and reviewed metadata persist across sessions.
-
-## 5. Explain amendment handling honestly
-
-A private tender offers Import amendment. With a genuine later notice, preserve source/reference, enter the changed details, and import the new version. Changes shows before/after fields and document text. Changed linked requirements reopen affected preparation tasks and notify watchers. Retrying an unchanged version does not repeat those effects.
-
-No genuine official amendment pair was preloaded. Do not invent a corrigendum live. If you need to demonstrate this mechanism without a real pair, explicitly identify the separate automated test fixture; it is not present in the shared catalogue. The two enriched catalogue notices' extra versions in this checkout are metadata improvements, labelled accordingly.
-
-## 6. Close with provenance and persistence
-
-Show Tender results: it truthfully starts empty because no award dataset was verified. The import/search workflow supports original published award notices. Show notifications if a real imported update exists, then sign out/sign back in to demonstrate the private workspace.
-
-Do not run data collection, refresh the source snapshot, delete database records, or change infrastructure during the presentation. Data access requires internet for Atlas; original document links also require the source website to be reachable.
-
-## Optional Gemini presentation
-
-Configure the server key and run the live checks in [Gemini implementation notes](GEMINI_IMPLEMENTATION_NOTES.md) before presenting AI output. Until then the real workspace shows setup/errors, not simulated model results.
-
-Save a public/non-sensitive capability profile, open an existing tender, and choose **Analyze documents → Read document**. Select readable pages and approve sending their text to Gemini. Review exact citations before saving selected private findings. Show the Eligibility evidence review and a separate human judgment, then demonstrate **AI recommendations** with the prepared real scope excerpts. Explain the displayed matching coverage and the dated snapshot. Supporting evidence and semantic relevance are not qualification guarantees.
+- Source availability and its own scraping schedule determine freshness. BidDesk does not continuously monitor official portals.
+- Missing financial, eligibility or document fields remain unknown; a date-only deadline does not establish an exact time.
+- Matching analyzes a bounded retrieved set. It is not eligibility approval.
+- Private archive files are temporary local storage; extracted text/findings stay private in Atlas.
+- No official bid submission, exhaustive award database, hosted deployment or monetization is included.

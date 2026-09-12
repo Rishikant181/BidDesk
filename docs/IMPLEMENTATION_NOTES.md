@@ -1,5 +1,9 @@
 # Implementation notes for the next session
 
+## Latest implementation — TenderHut
+
+Read [TENDERHUT_IMPLEMENTATION_NOTES.md](TENDERHUT_IMPLEMENTATION_NOTES.md) first. The user authorized full implementation and a fresh product flow. Public JSON discovery, HTML detail refresh, profile-driven upstream matching, and optional browser-assisted ZIP/PDF import are now implemented locally. The planning-only statements below are historical and superseded. No pasted TenderHut credentials were used or saved. The extension's actual authenticated Firefox download requires a manual smoke check; see the new notes for verification and limits.
+
 ## Latest planning decision — TenderHut (not implemented)
 
 The concrete execution sequence is in [TENDERHUT_IMPLEMENTATION_PLAN.md](TENDERHUT_IMPLEMENTATION_PLAN.md), including identity/index migration, partial-response preservation, request-driven caching, bounded profile retrieval/AI stages and verification. This is also planning only.

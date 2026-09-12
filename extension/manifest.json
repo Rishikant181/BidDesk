@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "BidDesk attachment bridge",
+  "version": "0.1.0",
+  "description": "Explicitly transfer your source portal attachments to a paired local BidDesk workspace.",
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": ["https://tenderhut.in/*", "http://localhost/*", "http://127.0.0.1/*"],
+  "background": {"scripts": ["background.js"]},
+  "action": {"default_popup": "popup.html"},
+  "browser_specific_settings": {"gecko": {"id": "attachments@biddesk.local", "strict_min_version": "128.0"}}
+}

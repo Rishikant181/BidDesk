@@ -11,18 +11,18 @@ export async function tenderFor(id: string, ownerId: string) {
   if (!t) throw new Error("NOT_FOUND");
   return t;
 }
-export async function saveTender(raw: unknown, ownerId: string | null, existingId?: string, checkedAt = new Date().toISOString()) {
+export async function saveTender(raw: unknown, ownerId: string | null, existingId?: string, checkedAt = new Date().toISOString(), provider = false) {
   const session = getClient().startSession();
-  try { return await session.withTransaction(()=>saveVersion(raw,ownerId,existingId,checkedAt,session)); } finally { await session.endSession(); }
+  try { return await session.withTransaction(()=>saveVersion(raw,ownerId,existingId,checkedAt,session,provider)); } finally { await session.endSession(); }
 }
-async function saveVersion(raw:unknown, ownerId:string|null, existingId:string|undefined, checkedAt:string, session:ClientSession) {
+async function saveVersion(raw:unknown, ownerId:string|null, existingId:string|undefined, checkedAt:string, session:ClientSession, provider=false) {
   const input = tenderSchema.parse(raw);
   const db = await getDb();
   const existing = await db.collection<Tender>("tenders").findOne(existingId ? {id:existingId,ownerId} : {ownerId,source:input.source,reference:input.reference},{session});
-  if (existingId && !existing) throw new Error("NOT_FOUND");
-  if (existing && (input.reference !== existing.reference || input.source !== existing.source)) throw new Error("An amendment must retain the source and reference. Import a re-tender separately.");
+  if (existingId && !existing && !provider) throw new Error("NOT_FOUND");
+  if (!provider && existing && (input.reference !== existing.reference || input.source !== existing.source)) throw new Error("An amendment must retain the source and reference. Import a re-tender separately.");
   const contentHash = createHash("sha256").update(stableStringify(input)).digest("hex");
-  const id = existing?.id || randomUUID();
+  const id = existing?.id || (provider ? existingId! : randomUUID());
   if (existing && stableStringify(tenderSchema.parse(existing)) === stableStringify(input)) {
     await db.collection<Tender>("tenders").updateOne({id},{$set:{checkedAt}},{session});
     return {id,result:"unchanged"};
@@ -40,9 +40,9 @@ async function saveVersion(raw:unknown, ownerId:string|null, existingId:string|u
   const t: Tender = {...input,id,ownerId,currentVersion:versionId,createdAt:existing?.createdAt || observedAt,updatedAt:observedAt,checkedAt};
   // Optimistic version check prevents concurrent imports from overwriting another version.
   if (existing) {
-    const changed = await db.collection<Tender>("tenders").replaceOne({id,currentVersion:existing.currentVersion},t,{session});
+    const changed = await db.collection("tenders").replaceOne({id,currentVersion:existing.currentVersion},{...t,identityKind:provider?"tenderhut":"legacy"},{session});
     if (!changed.matchedCount) throw new Error("This tender changed during import. Reload and retry.");
-  } else await db.collection<Tender>("tenders").insertOne(t,{session});
+  } else await db.collection("tenders").insertOne({...t,identityKind:provider?"tenderhut":"legacy"},{session});
   await reconcileEvents(id,session);
   return {id,result:existing ? "updated" : "imported"};
 }

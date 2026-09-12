@@ -1,8 +1,16 @@
 # BidDesk source coverage
 
-## Selected data mode
+## Current data mode — 12 September 2026
 
-User decision on 11 September 2026: continue with the planned **one-time real snapshot**. No API integrations, reverse-engineered endpoints, continuous monitoring, scheduled collection, or nationwide freshness claim.
+Public search uses [TenderHut](https://tenderhut.in/app) `/bids` JSON and filter metadata. Tender detail refresh parses `/tender/{source}/{slug}` HTML. Each record links to the original official portal; the aggregator is not the issuing authority. Retrieval timestamps establish when BidDesk fetched a response, not when the official source last changed. There is no periodic monitoring or claim of complete national coverage.
+
+Optional authenticated attachment ZIPs are requested by the user's browser extension from `/bids/{id}/documents/zip` and transferred privately to local BidDesk using a one-use grant. TenderHut credentials remain in the browser. Actual account entitlement and browser session behavior require the operator's manual smoke check.
+
+See [current implementation notes](TENDERHUT_IMPLEMENTATION_NOTES.md) for limits, provenance and verification. The source API is undocumented and can change. Original official documents remain authoritative.
+
+## Historical data mode
+
+The following snapshot documentation records the earlier implementation and remains relevant only to the retained ISRO catalogue. It is no longer the default discovery source.
 
 ## Shared catalogue
 

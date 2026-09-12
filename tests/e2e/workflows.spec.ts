@@ -6,12 +6,12 @@ test("real snapshot browser journey and private import/amendment isolation",asyn
  const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
  await page.goto("/sign-up");
  await page.getByLabel("Full name").fill("Verification Workspace");await page.getByLabel("Email address").fill("first@example.test");await page.getByLabel("Password",{exact:true}).fill("Test-only-password-483!");await page.getByRole("button",{name:"Create workspace"}).click();
- await expect(page.getByRole("heading",{level:1})).toBeVisible();await expect(page).toHaveURL(/overview/);
+ await expect(page.getByRole("heading",{level:1})).toBeVisible();await expect(page).toHaveURL(/discover/);
  await page.getByRole("link",{name:"Discover tenders",exact:true}).click();
- await expect(page.locator("tbody tr")).toHaveCount(15);await page.screenshot({path:".local/discover-desktop.png",fullPage:true});
+ await expect(page.locator("tbody tr")).toHaveCount(2);await page.screenshot({path:".local/discover-desktop.png",fullPage:true});
  const firstSave=page.getByRole("button",{name:/^Save /}).first();await firstSave.click();await expect(page.getByRole("button",{name:/^Unsave /}).first()).toBeVisible();await page.reload();await expect(page.getByRole("button",{name:/^Unsave /}).first()).toBeVisible();
  await page.getByRole("checkbox",{name:/^Compare /}).nth(0).check();await page.getByRole("checkbox",{name:/^Compare /}).nth(1).check();await page.getByRole("link",{name:"Compare tenders →"}).click();await expect(page.locator(".comparison-table thead th")).toHaveCount(3);
- await page.goto("/discover");await page.getByLabel("Search tenders",{exact:true}).fill("PRL");await page.getByRole("button",{name:"Search",exact:true}).click();await expect(page).toHaveURL(/q=PRL/);await expect(page.locator("tbody tr").first()).toContainText("PRL");
+ await page.goto("/discover?local=true");await page.getByLabel("Search tenders",{exact:true}).fill("PRL");await page.getByRole("button",{name:"Search",exact:true}).click();await expect(page).toHaveURL(/q=PRL/);await expect(page.locator("tbody tr").first()).toContainText("PRL");
  const exported=await page.request.get("/api/data?mode=export&q=PRL");expect(exported.ok()).toBeTruthy();expect(await exported.text()).toContain("PRL");expect(exported.headers()["cache-control"]).toContain("no-store");
  await page.goto("/imports");await page.getByRole("button",{name:/Import a spreadsheet/}).click();
  await page.getByLabel("Tender CSV").setInputFiles({name:"import.csv",mimeType:"text/csv",buffer:Buffer.from('title,reference,value\nPrivate test CSV,TEST-CSV,42\nInvalid test row,INVALID,-1')});await expect(page.getByText("Ready",{exact:true})).toBeVisible();await expect(page.getByText(/1 valid rows will be imported/)).toBeVisible();await page.getByRole("checkbox",{name:/I reviewed these details/}).check();await page.getByRole("button",{name:"Import reviewed records"}).click();await expect(page.getByRole("heading",{name:"Import results"})).toBeVisible();await expect(page.getByText("imported",{exact:true})).toBeVisible();
@@ -39,7 +39,7 @@ test("real snapshot browser journey and private import/amendment isolation",asyn
 });
 test("real PDF browser extraction",async({page})=>{
  test.skip(!process.env.BIDDESK_TEST_PDF,"Set BIDDESK_TEST_PDF to an official text PDF for the source rehearsal");
- await page.goto("/sign-in");await page.getByLabel("Email address").fill("first@example.test");await page.getByLabel("Password",{exact:true}).fill("Test-only-password-483!");await page.getByRole("button",{name:"Sign in",exact:true}).click();await expect(page).toHaveURL(/overview/);
+ await page.goto("/sign-in");await page.getByLabel("Email address").fill("first@example.test");await page.getByLabel("Password",{exact:true}).fill("Test-only-password-483!");await page.getByRole("button",{name:"Sign in",exact:true}).click();await expect(page).toHaveURL(/discover/);
  await page.goto("/imports");await page.getByRole("button",{name:/Read a PDF/}).click();await page.getByLabel("Tender PDF").setInputFiles(process.env.BIDDESK_TEST_PDF!);await expect(page.getByText(/pages extracted. Review/)).toBeVisible({timeout:60000});
  await page.getByLabel("Tender title",{exact:false}).fill("Official document extraction rehearsal");await page.getByLabel("Official reference",{exact:false}).fill("PDF-REHEARSAL");await page.getByRole("checkbox",{name:/I reviewed these details/}).check();await page.getByRole("button",{name:"Import reviewed records"}).click();await expect(page.getByText("imported",{exact:true})).toBeVisible();await page.getByRole("link",{name:/Open tender/}).click();await page.getByRole("tab",{name:/documents/}).click();await expect(page.getByText(/extracted pages · original binary/)).toBeVisible();
 });
