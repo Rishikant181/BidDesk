@@ -14,20 +14,15 @@ export async function getDb() {
 }
 export async function ensureIndexes() {
   const db = await getDb();
-  await db.collection("tenders").updateMany({identityKind:{$exists:false}},{$set:{identityKind:"legacy"}});
   await Promise.all([
     db.collection("tenders").createIndex({id:1},{unique:true}),
-    db.collection("tenders").createIndex({ownerId:1,source:1,reference:1},{unique:true,name:"legacy_reference",partialFilterExpression:{identityKind:"legacy"}}),
     db.collection("tenders").createIndex({title:"text",description:"text",reference:"text",authority:"text"}),
-    db.collection("tenders").createIndex({ownerId:1,closesAt:1,state:1,category:1}),
+    db.collection("tenders").createIndex({closesAt:1,state:1,category:1}),
     db.collection("versions").createIndex({tenderId:1,hash:1},{unique:true}),
     db.collection("favorites").createIndex({ownerId:1,tenderId:1},{unique:true}),
     db.collection("reviews").createIndex({ownerId:1,tenderId:1},{unique:true}),
     db.collection("companies").createIndex({ownerId:1},{unique:true}),
     db.collection("bids").createIndex({ownerId:1,tenderId:1},{unique:true}),
     db.collection("notifications").createIndex({id:1},{unique:true}),
-    db.collection("awards").createIndex({id:1},{unique:true}),
   ]);
-  const indexes=await db.collection("tenders").listIndexes().toArray();
-  if(indexes.some(i=>i.name==="ownerId_1_source_1_reference_1"))await db.collection("tenders").dropIndex("ownerId_1_source_1_reference_1");
 }

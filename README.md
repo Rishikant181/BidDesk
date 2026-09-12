@@ -1,55 +1,42 @@
 # BidDesk
 
-A local Indian tender discovery and preparation POC using public tender search, Next.js, MongoDB Atlas and optional Gemini analysis. Discovery refreshes on navigation or reload, with no periodic polling. Profile matching searches upstream before ranking retrieved opportunities.
-
-Read [current implementation and demo instructions](docs/TENDERHUT_IMPLEMENTATION_NOTES.md). Optional authenticated ZIP transfer uses the [Firefox attachment extension](extension/README.md); source-portal credentials stay in the browser. PDF upload and analysis also work without the extension.
+A local procurement workspace with public TenderHut discovery, private document review and bid preparation. TenderHut is the only tender source. This is an evolving, undeployed prototype: iterations may replace prior structures without backward compatibility.
 
 ## Run locally
 
-Tested with Node **24.18.0** and npm **11.16.0**. Use Node 24 LTS.
+Node 22.16 or newer is required. Preserve the configured `.env.local`.
 
 ```sh
 npm ci
-cp .env.example .env.local
-```
-
-Skip the copy if `.env.local` already exists. Set `MONGODB_URI`, `MONGODB_DB`, `BETTER_AUTH_SECRET` (at least 32 random characters), and `BETTER_AUTH_URL=http://localhost:3000`. Generate a secret locally with `openssl rand -hex 32`. Keep this file private. Your Atlas database user must have read/write access to the selected database; allow your local IP in Atlas Network Access.
-
-```sh
 npm run check:config
 npm run db:indexes
 npm run dev
 ```
 
-Open **http://localhost:3000**, then create an account. Use `localhost` consistently with `BETTER_AUTH_URL`. The existing Atlas connection is configured. No snapshot import is required for discovery; previous imports remain in the retained catalogue.
+Open **http://localhost:3000**, create an account, and browse Discover. Use `localhost` consistently with `BETTER_AUTH_URL`. No catalogue import or source credentials are required for public discovery.
 
-For a production-mode local rehearsal, stop the dev server, then:
+Configuration uses `MONGODB_URI`, `MONGODB_DB`, `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`. Optional AI uses `GEMINI_API_KEY`; see `.env.example` for model/allowance settings. Never commit credentials.
 
-```sh
-npm run build
-npm start
-```
+## Workflows
 
-The build uses Next.js's supported Webpack option because Turbopack production CSS processing encountered a socket restriction in the development environment. Development uses the default Next.js bundler. Nothing is deployed.
+- Discover current notices by keyword, region, category, organisation, originating portal, buyer, procurement type, value and deadline. Save opportunities, preview, compare up to four and export the displayed page.
+- Browse retained provider records and saved opportunities. Open a tender to recheck its source details; no polling or background refresh is performed.
+- Maintain company capabilities, financial/certification evidence and selected project references.
+- Attach a PDF to an existing tender, extract text and review AI suggestions with exact page citations. Private findings do not overwrite published source facts.
+- Optionally transfer a tender's attachments through the [Firefox extension](extension/README.md), using your browser's authenticated source session. Credentials stay in the browser.
+- Review eligibility, record separate human evidence judgments, and prepare bids with tasks, responsibility labels, deadlines and CSV checklists.
+- Track saved tender deadlines, tasks, source observation changes and in-app notifications.
+- Start profile matching to see 10 tender cards immediately, with spinners while their AI explanations load. Scroll for the next ten cards and their explanations.
 
-## What works
+There is no standalone tender import, spreadsheet ingestion, manual amendment import, award-results page, old catalogue matcher or alternate-source downloader. Submitted/won/lost are personal tracking statuses; official outcomes must be verified on the originating portal. The originating-portal filter operates within the sole provider feed.
 
-- Account sessions and private workspaces backed by Atlas.
-- Real-notice search, filters, sorting, pagination, quick preview, favorites, comparison, and CSV export.
-- Source links, dates, financial unknowns, private notes, document text, and version comparison.
-- Company evidence and conservative requirement assessments; no invented eligibility guarantees.
-- Bid pipeline, linked checklists, task owners/dates/notes, checklist export, and calendar.
-- Reviewed manual/CSV/PDF imports. Manual PDF extraction runs on the user's device; transferred archive PDFs are extracted in the local server worker.
-- Imported updates preserve versions, reopen affected tasks, and generate in-app notifications. Updates and their effects commit in one Atlas transaction.
-- Private award import/search and basic coverage counts. There are no preloaded awards.
+## Documents and AI
 
-## Data and demo instructions
+In a tender, open **Analyze documents → Upload a PDF**, or **Documents → Set up the Firefox extension**. Selected PDF text is stored privately and can be analyzed after choosing pages. Only capability text and selected projects are shared for AI review; financial checks remain local. Use public or non-sensitive inputs with the configured free-tier demo.
 
-Read [source coverage](docs/DATA_SOURCES.md) and the [presentation walkthrough](docs/DEMO_WALKTHROUGH.md). Public discovery retrieves Indian notices from the source portal. Opening a tender rechecks its rendered source page. The former 77-record ISRO snapshot is historical retained data, not the discovery feed. Unknown amounts are not zero.
+PDF limits: 20 MB, 250 pages, 25,000 characters/page and 700,000 characters/document. Analysis accepts up to 30 pages and 120,000 characters per run. No OCR or Word conversion. Local uploads extract in the browser; transferred PDFs extract in a bounded server worker.
 
-Use **Import a tender** for new private notices, CSV files, or reviewed PDF text. Each account sees the shared catalogue plus its own imports. Public notices can receive private notes and requirements; ordinary users cannot rewrite the shared source data. A private tender's **Import amendment** action retains its source/reference and creates a new version when content changes.
-
-The local `data:collect` and `data:refresh -- --source isro` commands are maintenance utilities, not required demo steps. They fetch current listing metadata only and can replace PDF-enriched metadata with the listing's more limited fields. Do not run them during a prepared snapshot presentation. No scheduler, cron job, or background polling is configured.
+ZIP limits: 25 MB compressed, 100 entries, 100 MB expanded total and 20 MB/file. Transferred files expire after 24 hours; extracted text remains private. Other file formats are download-only. The real signed-in Firefox upstream download still requires a manual smoke check.
 
 ## Verify
 
@@ -57,46 +44,24 @@ The local `data:collect` and `data:refresh -- --source isro` commands are mainte
 npm run typecheck
 npm run lint
 npm test
-npx playwright install chromium
-npm run test:e2e
+npm run build
+BIDDESK_E2E_PRODUCTION=1 npm run test:e2e
 ```
 
-The browser suite starts its own server on port 3001, creates a randomly named `biddesk_test_<hex>` database on your Atlas cluster, seeds real catalogue metadata, tests two-user isolation and private test records, then removes only that run's database. Its credentials therefore need permission to create/use a separate test database. It never resets the configured demo database. Avoid concurrent runs. If interrupted, the generated database name is recorded in ignored `.local/e2e-database.json` for manual cleanup.
+Browser tests start their own server on port 3001 with a fresh random `biddesk_test_<hex>` database, deterministic provider responses and isolated AI stubs. They remove their test database and never populate demo data with fixtures. No external PDF fixture is needed. Use `npx playwright install chromium` if the browser is missing.
 
-To include the real PDF rehearsal, download a text-based official PDF to your own filesystem and run:
+Optional live checks (explicit network/model usage):
 
 ```sh
-BIDDESK_TEST_PDF=/absolute/path/notice.pdf npm run test:e2e
+npm run ai:check
+npm run test:source:live
+npm run test:source:live -- --ai
 ```
 
-For the same suite against the built production server, first run `npm run build`, then prefix the test command with `BIDDESK_E2E_PRODUCTION=1`.
+See [implementation notes](docs/IMPLEMENTATION_NOTES.md), [source coverage](docs/DATA_SOURCES.md), [demo steps](docs/DEMO_WALKTHROUGH.md), [verification](docs/VERIFICATION.md) and [UI audit](docs/UI_FUNCTIONALITY_AUDIT.md).
 
-Without that variable, the optional source-PDF test is explicitly skipped. The test database contains labelled fixtures for edge cases; those fixtures are never imported into the demo catalogue. Local screenshots and traces remain ignored.
+## Boundaries
 
-## Practical limits
+The app does not submit official bids, deliver email/push notifications, provide team assignments or promise complete awards/amendment/eligibility coverage. Unknown source facts remain unknown. Date-only values do not establish a precise closing time. Matching selects up to 30 notices by profile-keyword relevance from at most 150 retrieved metadata candidates. It loads ten cards at a time and generates explanations only for loaded cards; relevance is not qualification.
 
-- Atlas requires an internet connection. No mock database or offline persistence fallback is supplied.
-- One private workspace per account; task responsibility is a label, not an invitation system.
-- No email verification/recovery service. For this local POC, create another account if access is lost; data transfer requires deliberate database administration. Do not delete existing accounts to reset a password.
-- PDF limits: 20 MB file, 250 pages, 25,000 extracted characters per page and 700,000 per document. No OCR. Original private PDFs remain local; reviewed text persists in Atlas.
-- CSV: up to 100 rows per import; 2 MB API body limit. Invalid rows are explained and skipped; reduce batch size for long text.
-- Public discovery uses upstream pagination and totals; page export includes only displayed rows. Local retained-catalogue views operate on at most 2,000 records; workspace loads up to 200 bids, 500 awards, 50 notifications, and detail loads up to 50 versions. This is a small-catalogue POC. Large document/version responses require pagination before hosted use at scale.
-- Amount filters use INR; other currencies are retained and displayed, not converted. Eligibility supports simple INR minimum turnover with matching financial periods, exact certifications with expiry/evidence, declared regions, and manual experience review.
-- No genuine official amendment pair or published award dataset was preloaded. Version impact is tested using isolated fixtures. PDF metadata enrichment is clearly labelled and must not be presented as an official corrigendum.
-- Local demo operation needs no additional paid API/service. Future hosting limits and plan eligibility must be reviewed separately; deployment is outside this implementation.
-
-## Repository map
-
-`src/app` contains routes; `src/components` contains the workspace views; `src/lib` contains schemas, authorization/data services, eligibility logic, and the source portal JSON/HTML adapters, attachment import and the legacy ISRO parser. `scripts` contains local setup/import commands. `data/public` holds the attributed, dated real snapshot and checksum. `tests` holds unit and browser/integration checks.
-
-The original decisions remain in [PROPOSAL.md](PROPOSAL.md) and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). API research is archived in [docs/TENDER_API_RESEARCH.md](docs/TENDER_API_RESEARCH.md); those APIs are not integrated.
-
-For continuing development in a later session, start with [Implementation notes](docs/IMPLEMENTATION_NOTES.md).
-
-## Gemini assistance
-
-Document drafts, AI-assisted evidence review, human judgments and semantic recommendations are implemented. Add `GEMINI_API_KEY` to `.env.local` and restart; live checks now pass with Gemini 3.6 Flash and Gemini Embedding 2. Manual workflows remain usable without it.
-
-Start with **Company profile → AI-shareable capabilities**, then **Open tender → Analyze documents**. Review source excerpts before applying suggestions. **Find tenders matching my profile** performs bounded upstream searches, prepares semantic candidates and explains up to five matches. Its coverage is the retrieved candidate set, not the full national catalogue.
-
-See [Gemini setup, walkthrough and implementation notes](docs/GEMINI_IMPLEMENTATION_NOTES.md) for configuration, real-data preparation, limits and the live verification command. The [accepted implementation plan](docs/GEMINI_IMPLEMENTATION_PLAN.md) records the design decisions.
+The local prototype has bounded reads (2,000 retained tenders, 200 bids, 50 notifications and 50 versions). Source concurrency is process-local, not a distributed ingestion service. There is no deployment, billing integration or scheduled ingestion.

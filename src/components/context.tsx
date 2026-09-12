@@ -1,7 +1,7 @@
 "use client";
 import { createContext,useContext } from "react";
-import type { Tender,Company,Bid,Award,Notification } from "@/lib/schemas";
-export type Workspace={user:{id:string;name:string;email:string};company:Company;tenders:Tender[];bids:Bid[];favorites:string[];notifications:Notification[];awards:Award[];runs:{at:string;source:string;status?:string;counts?:Record<string,number>}[]};
+import type { Tender,Company,Bid,Notification } from "@/lib/schemas";
+export type Workspace={user:{id:string;name:string;email:string};company:Company;tenders:Tender[];bids:Bid[];favorites:string[];notifications:Notification[]};
 export async function api<T=Record<string,unknown>>(body:Record<string,unknown>):Promise<T>{const res=await fetch("/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const data=await res.json();if(!res.ok)throw new Error(data.error || "Request failed");return data;}
 export async function read<T>(params="",signal?:AbortSignal):Promise<T>{const res=await fetch("/api/data?"+params,{cache:"no-store",signal});const data=await res.json();if(!res.ok)throw new Error(data.error || "Request failed");return data;}
 export const WorkspaceContext=createContext<{data:Workspace;refresh:()=>Promise<void>;notify:(text:string,error?:boolean)=>void}|null>(null);

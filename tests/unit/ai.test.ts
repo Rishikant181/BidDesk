@@ -1,6 +1,5 @@
 import {describe,it,expect,afterEach} from "vitest";
 import {chunkPages,groundedExtraction,mergeEligibility,validCitation,cosine,evidenceFor} from "../../src/lib/ai/grounding";
-import {allowedDocumentUrl,publicIPv4} from "../../src/lib/ai/documents";
 import {sourceDocumentSchema,type EligibilitySuggestion} from "../../src/lib/ai/contracts";
 import {requirementSchema,companySchema} from "../../src/lib/schemas";
 import {testMode} from "../../src/lib/ai/runtime";
@@ -17,11 +16,6 @@ describe("AI grounding and conservative outcomes",()=>{
  it("only shares explicitly selected capability/project text",()=>{const company=companySchema.parse({name:"Private",turnover:800,turnoverEvidence:"Secret accounts",aiProfile:"Public scope",projects:[{id:"p",title:"Hidden",scope:"Private project",completedAt:"",evidence:"",shareWithAI:false}]});expect(evidenceFor(company)).toEqual([{id:"capabilities",text:"Public scope"}]);});
  it("enforces selected page and chunk bounds",()=>{expect(chunkPages(doc,[1,2]).flat().map(p=>p.page)).toEqual([1,2]);expect(()=>chunkPages(doc,[99])).toThrow();expect(()=>chunkPages({...doc,pages:Array.from({length:31},(_,i)=>({page:i+1,text:"text"}))},Array.from({length:31},(_,i)=>i+1))).toThrow();});
  it("validates vectors instead of returning misleading scores",()=>{expect(cosine([1,0],[1,0])).toBe(1);expect(cosine([0,0],[1,0])).toBe(0);expect(()=>cosine([1],[1,2])).toThrow();expect(()=>cosine([NaN],[1])).toThrow();});
-});
-describe("document retrieval boundary",()=>{
- it.each(["http://www.isro.gov.in/media_isro/pdf/Tenders/a.pdf","https://evil.example/a.pdf","https://www.isro.gov.in@127.0.0.1/a.pdf","https://www.isro.gov.in/media_isro/pdf/Tenders/%2e%2e%2fsecret.pdf","https://www.isro.gov.in/media_isro/pdf/Tenders/a.pdf?redirect=1"])("rejects unsupported source %s",url=>expect(()=>allowedDocumentUrl(url)).toThrow());
- it("allows the exact official PDF path",()=>expect(allowedDocumentUrl("https://www.isro.gov.in/media_isro/pdf/Tenders/2026/NIT58_10092026.pdf").hostname).toBe("www.isro.gov.in"));
- it.each(["127.0.0.1","10.0.0.1","169.254.169.254","172.16.0.1","192.168.0.1","100.64.0.1","224.0.0.1"])("rejects nonpublic DNS address %s",ip=>expect(publicIPv4(ip)).toBe(false));
 });
 describe("stub isolation",()=>{
  const oldStub=process.env.BIDDESK_AI_TEST_STUB,oldDB=process.env.MONGODB_DB;
@@ -63,13 +57,13 @@ describe("extraction document identity",()=>{
 });
 
 describe("source fact comparison",()=>{
- it("distinguishes ISTRAC reference aliases and date precision from conflicts",async()=>{
+ it("preserves exact reference identity and deadline precision",async()=>{
   const {compareFindings}=await import("../../src/lib/ai/conflicts"),{tenderSchema}=await import("../../src/lib/schemas");
-  const t={...tenderSchema.parse({title:"GNSS receivers",reference:"ISTRAC/PUBLIC TENDER NOTICE No.TR202600012701 Dated:08.09.2026",closesAt:"2026-09-29T02:00:00+05:30"}),id:"t",ownerId:null,currentVersion:"v",createdAt:"",updatedAt:"",checkedAt:""};
-  const result=compareFindings(t,[{key:"reference",value:"ISTRAC/PURCHASE/TR202600012701",citations:[citation]},{key:"closesAt",value:"2026-09-29",citations:[citation]}]);
-  expect(result.conflicts).toEqual([]);expect(result.comparisonNotes).toHaveLength(2);expect(t.closesAt).toBe("2026-09-29T02:00:00+05:30");
+  const t={...tenderSchema.parse({title:"Software system",reference:"NOTICE-123",closesAt:"2026-09-29T02:00:00+05:30"}),id:"th-123",currentVersion:"v",createdAt:"",updatedAt:"",checkedAt:""};
+  const result=compareFindings(t,[{key:"reference",value:"NOTICE-123",citations:[citation]},{key:"closesAt",value:"2026-09-29",citations:[citation]}]);
+  expect(result.conflicts).toEqual([]);expect(result.comparisonNotes).toHaveLength(1);expect(t.closesAt).toBe("2026-09-29T02:00:00+05:30");
   for(const value of ["2026-09-30","2026-09-29T14:00:00+05:30"])expect(compareFindings(t,[{key:"closesAt",value,citations:[citation]}]).conflicts).toHaveLength(1);
   expect(compareFindings(t,[{key:"closesAt",value:"2026-09-28T20:30:00Z",citations:[citation]}]).conflicts).toEqual([]);
-  for(const value of ["ISTRAC/PURCHASE/TR202600012702","OTHER/PURCHASE/TR202600012701"])expect(compareFindings(t,[{key:"reference",value,citations:[citation]}]).conflicts).toHaveLength(1);
+  for(const value of ["NOTICE-124","OTHER-123"])expect(compareFindings(t,[{key:"reference",value,citations:[citation]}]).conflicts).toHaveLength(1);
  });
 });

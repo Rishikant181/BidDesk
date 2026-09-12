@@ -21,11 +21,6 @@ export const requirementSchema = z.object({
   citations: z.array(citationSchema).max(8).optional(), origin: z.enum(["manual","ai-assisted"]).optional(), complex: z.boolean().optional(),
 });
 export type Requirement = z.infer<typeof requirementSchema>;
-export const documentSchema = z.object({
-  analysisDocumentId:z.string().max(100).optional(),
-  name: z.string().min(1).max(300), url: safeUrl.default(""),
-  pages: z.array(z.object({ page: z.number().int().positive(), text: z.string().max(25000) })).max(250).default([]),
-}).refine(d => d.pages.reduce((sum,p) => sum + p.text.length, 0) <= 700000, "Document text limit is 700,000 characters");
 export const tenderSchema = z.object({
   title: z.string().trim().min(3).max(1000), reference: z.string().trim().min(1).max(300),
   description: z.string().max(30000).default(""), authority: z.string().max(600).default(""),
@@ -34,15 +29,14 @@ export const tenderSchema = z.object({
   value: money, emd: money, fee: money, currency: z.string().regex(/^[A-Z]{3}$/).default("INR"),
   publishedAt: dateValue.default(""), closesAt: dateValue.default(""),
   sourceStatus: z.enum(["unknown", "active", "cancelled", "awarded", "closed"]).default("unknown"),
-  source: z.string().max(100).default("Manual import"), sourceUrl: safeUrl.default(""),
+  source: z.string().max(100).default("Public notice"), sourceUrl: safeUrl.default(""),
   sourceNote: z.string().max(1000).default(""),
-  documents: z.array(documentSchema).max(20).default([]),
   requirements: z.array(requirementSchema).max(100).default([]),
 }).refine(t => new Set(t.requirements.map(r=>r.id)).size === t.requirements.length, "Requirement IDs must be unique")
-  .refine(t => JSON.stringify(t).length <= 1500000, "Tender text exceeds 1.5 MB; import a shorter document excerpt");
+  .refine(t => JSON.stringify(t).length <= 1500000, "Tender text exceeds 1.5 MB; use a shorter source excerpt");
 export type TenderInput = z.infer<typeof tenderSchema>;
-export type Tender = TenderInput & { id: string; ownerId: string | null; currentVersion: string; createdAt: string; checkedAt: string; updatedAt: string };
-export type Version = { id: string; tenderId: string; ownerId: string | null; hash: string; observedAt: string; snapshot: TenderInput };
+export type Tender = TenderInput & { id: string; currentVersion: string; createdAt: string; checkedAt: string; updatedAt: string };
+export type Version = { id: string; tenderId: string; hash: string; observedAt: string; snapshot: TenderInput };
 export const companySchema = z.object({
   name: z.string().max(200).default(""), categories: z.string().max(500).default(""),
   regions: z.array(z.string().max(100)).max(50).default([]), turnover: money,
@@ -58,6 +52,4 @@ export const taskSchema = z.object({ id: z.string().min(1).max(100), title: z.st
 export type Task = z.infer<typeof taskSchema>;
 export const bidUpdateSchema = z.object({ stage: z.enum(stages), notes: z.string().max(10000), decision: z.string().max(2000), tasks: z.array(taskSchema).max(200), revision: z.number().int().nonnegative() }).refine(b => new Set(b.tasks.map(t=>t.id)).size === b.tasks.length, "Task IDs must be unique");
 export type Bid = z.infer<typeof bidUpdateSchema> & { id: string; tenderId: string; ownerId: string; title: string; tenderVersion: string; updatedAt: string; createdAt: string; events: { at: string; message: string }[] };
-export const resultSchema = z.object({ title: z.string().min(3).max(1000), reference: z.string().min(1).max(300), authority: z.string().max(500).default(""), winner: z.string().max(300).default(""), awardDate: dateValue.default(""), value: money, currency: z.string().regex(/^[A-Z]{3}$/).default("INR"), sourceUrl: safeUrl, country: z.string().default("India") });
-export type Award = z.infer<typeof resultSchema> & { id: string; ownerId: string | null };
 export type Notification = { id: string; ownerId: string; tenderId: string; title: string; createdAt: string; read: boolean };

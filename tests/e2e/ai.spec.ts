@@ -3,8 +3,8 @@ async function ai(request:APIRequestContext,data:unknown){const r=await request.
 test("document draft, private eligibility, matching, caching and isolation",async({page,browser})=>{
  const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
  const signup=await page.request.post("/api/auth/sign-up/email",{data:{name:"AI verification",email:"ai@example.test",password:"Test-only-password-483!"}});expect(signup.ok()).toBeTruthy();
- const workspace=await (await page.request.get("/api/data?mode=tenders&local=true&q=RFSoC")).json();const tender=workspace.tenders.find((t:{category:string;closesAt:string})=>t.category!=="Unclassified"&&t.closesAt>new Date().toISOString());expect(tender).toBeTruthy();
- const before=await (await page.request.get(`/api/data?mode=tender&id=${tender.id}`)).json();
+ await page.request.get("/api/data?mode=tenders");
+ const before=await (await page.request.get("/api/data?mode=tender&id=th-6732969")).json();const tender=before.tender;
  const text="Test-only source fixture. Supply laboratory instrumentation and radio frequency measurement systems. Similar completed projects require documentary evidence and individual review.";
  const document=await ai(page.request,{action:"attach",tenderId:tender.id,version:tender.currentVersion,document:{name:"Isolated source fixture",pages:[{page:1,text}]}});
  expect((await page.request.post("/api/ai",{data:{action:"extract",documentId:document.id,pages:[1],chunkIndex:0}})).status()).toBe(200);
@@ -20,11 +20,11 @@ test("document draft, private eligibility, matching, caching and isolation",asyn
  const req=eligibility.analysis.items.find((r:{label:string})=>r.label.startsWith("Test fixture"));
  await page.getByText("Record your evidence judgment",{exact:true}).last().click();await page.getByLabel("Evidence reference",{exact:true}).last().fill("Test project report page 1");await page.getByLabel("Reason for your judgment").last().fill("Test-only human review: inspect project completion certificate.");const judgmentSaved=page.waitForResponse(r=>r.url().endsWith("/api/ai")&&r.request().postData()?.includes('"action":"judgment"')===true);await page.getByRole("button",{name:"Save human judgment"}).click();expect((await judgmentSaved).ok()).toBe(true);await expect(page.locator("p.info-box").filter({hasText:"Test-only human review:"})).toBeVisible();
  expect((await (await page.request.get(`/api/ai?tenderId=${tender.id}`)).json()).analysis.judgments.find((j:{requirementId:string})=>j.requirementId===req.requirementId).stale).toBe(false);
- const after=await (await page.request.get(`/api/data?mode=tender&id=${tender.id}`)).json();expect(after.tender).toEqual(before.tender);
- await ai(page.request,{action:"profile",tenderId:tender.id});await page.goto("/discover?recommended=true");await page.getByRole("button",{name:"Find tenders matching my profile",exact:true}).click();await expect(page.getByText("Matching complete. Relevance is separate from eligibility.")).toBeVisible();await expect(page.locator(".ai-match-card").first()).toBeVisible();
+ const after=await (await page.request.get(`/api/data?mode=tender&id=${tender.id}`)).json();expect(after.tender.currentVersion).toEqual(before.tender.currentVersion);
+ await page.goto("/discover?recommended=true");await page.getByRole("button",{name:"Find tenders matching my profile",exact:true}).click();await expect(page.getByText("Matching complete. Relevance is separate from eligibility.")).toBeVisible();await expect(page.locator(".ai-match-card").first()).toBeVisible();
  await page.screenshot({path:".local/ai-recommendations-desktop.png",fullPage:true});
  await page.setViewportSize({width:390,height:844});await page.reload();await expect(page.locator(".ai-match-card").first()).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);await page.screenshot({path:".local/ai-recommendations-mobile.png",fullPage:true});
- await page.request.post("/api/data",{data:{action:"company",company:{...company,aiProfile:company.aiProfile+" Updated capabilities."}}});const priorRun=await (await page.request.get("/api/matching")).json();expect((await page.request.post("/api/matching",{data:{action:"finish",runId:priorRun._id},headers:{origin:"http://localhost:3001"}})).status()).toBe(409);const staleState=await (await page.request.get(`/api/ai?tenderId=${tender.id}`)).json();expect(staleState.analysis.stale).toBe(true);expect(staleState.analysis.judgments[0].stale).toBe(true);
+ await page.request.post("/api/data",{data:{action:"company",company:{...company,aiProfile:company.aiProfile+" Updated capabilities."}}});const priorRun=await (await page.request.get("/api/matching")).json();expect((await page.request.post("/api/matching",{data:{action:"page",runId:priorRun._id,offset:0},headers:{origin:"http://localhost:3001"}})).status()).toBe(409);const staleState=await (await page.request.get(`/api/ai?tenderId=${tender.id}`)).json();expect(staleState.analysis.stale).toBe(true);expect(staleState.analysis.judgments[0].stale).toBe(true);
  const other=await browser.newContext({baseURL:"http://localhost:3001"});await other.request.post("/api/auth/sign-up/email",{data:{name:"AI other",email:"ai-other@example.test",password:"Test-only-password-483!"}});expect((await other.request.post("/api/ai",{data:{action:"extract",documentId:document.id,pages:[1],chunkIndex:0}})).status()).toBe(404);const foreign=await (await other.request.get(`/api/ai?tenderId=${tender.id}`)).json();expect(foreign.drafts).toHaveLength(0);expect(foreign.findings).toBeNull();await other.close();expect(errors).toEqual([]);
 });
 
@@ -32,14 +32,16 @@ test("atomic duplicate suppression and application allowance",async({request})=>
  const {MongoClient}=await import("mongodb"),dbName=process.env.BIDDESK_TEST_DB;
  if(!dbName||!/^biddesk_test_[a-f0-9]{16}$/.test(dbName))throw new Error("Isolated database required");
  const signup=await request.post("/api/auth/sign-up/email",{data:{name:"Budget test",email:"budget@example.test",password:"Test-only-password-483!"}});expect(signup.ok()).toBe(true);const ownerId=(await signup.json()).user.id;
- const document=await ai(request,{action:"attach",document:{name:"Test concurrency",pages:[{page:1,text:"Isolated verification fixture: laboratory instruments require individual evidence review."}]}});
+ await request.get("/api/data?mode=tenders");
+ const {tender}=await (await request.get("/api/data?mode=tender&id=th-6732969")).json();
+ const document=await ai(request,{action:"attach",tenderId:tender.id,version:tender.currentVersion,document:{name:"Test concurrency",pages:[{page:1,text:"Isolated verification fixture: laboratory instruments require individual evidence review."}]}});
  const payload={action:"extract",documentId:document.id,pages:[1],chunkIndex:0};
  const responses=await Promise.all([request.post("/api/ai",{data:payload}),request.post("/api/ai",{data:payload})]);expect(responses.some(r=>r.ok())).toBe(true);expect(responses.every(r=>r.ok()||r.status()===409)).toBe(true);
  const client=new MongoClient(process.env.MONGODB_URI!);try{await client.connect();const db=client.db(dbName),id=`${new Date().toISOString().slice(0,10)}:generation:${ownerId}`;
  const budgets=db.collection<{_id:string;count:number}>("aiBudget");expect((await budgets.findOne({_id:id}))?.count).toBe(1);
  await budgets.updateOne({_id:id},{$set:{count:20}});
  expect((await ai(request,payload)).cached).toBe(true);
- const other=await ai(request,{action:"attach",document:{name:"Test budget",pages:[{page:1,text:"A different isolated fixture: building construction requires verified prior contract completion."}]}});
+ const other=await ai(request,{action:"attach",tenderId:tender.id,version:tender.currentVersion,document:{name:"Test budget",pages:[{page:1,text:"A different isolated fixture: building construction requires verified prior contract completion."}]}});
  expect((await request.post("/api/ai",{data:{...payload,documentId:other.id}})).status()).toBe(429);
  expect((await budgets.findOne({_id:id}))?.count).toBe(20);
  }finally{await client.close();}

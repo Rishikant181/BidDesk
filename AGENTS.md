@@ -10,4 +10,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## BidDesk continuity
 
-Before continuing project work, read [docs/IMPLEMENTATION_NOTES.md](docs/IMPLEMENTATION_NOTES.md) for the implemented state, accepted snapshot scope, verification results, data limits and resume instructions. Preserve existing uncommitted implementation files and private configuration. Update the notes after meaningful implementation work.
+Before continuing project work, read [docs/IMPLEMENTATION_NOTES.md](docs/IMPLEMENTATION_NOTES.md) for the implemented state, current source policy, verification results, data limits and resume instructions. Preserve existing uncommitted implementation files and private configuration. Update the notes after meaningful implementation work.
+
+## Iteration policy
+
+TenderHut is the only tender source. This is an undeployed prototype; nothing is finalized. Treat iterations as fresh and do not retain backward-compatibility layers or alternate source flows. Preserve private configuration.

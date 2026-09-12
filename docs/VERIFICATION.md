@@ -1,94 +1,60 @@
-## Direct AI actions follow-up
+# Verification — cards before explanations
 
-Removed repeated sharing-consent UI and API checks as requested. Document extraction, eligibility review, import suggestions and profile matching run when clicked. Typecheck, lint, 62 unit tests and both AI browser tests passed (50.2 seconds). Browser checks now send no consent field, including private-access denial and quota/deduplication checks. Source-fact review remains a separate workflow.
+- TypeScript, ESLint, 50 unit tests, production build and all seven browser journeys pass (browser suite: 1.6 minutes).
+- A held explanation request proves ten cards and ten spinners render before generation. Initial matching makes no embedding requests; the API rejects explanations for unloaded pages.
+- Pagination verifies 10 → 20 → 25 visible cards, pending/error states, cached explanation retry after a partial model failure, duplicate suppression, owner isolation, reload persistence and region staleness.
+- A separate overlap test loads and explains cards 11–20 while explanations for 1–10 are held, then releases the first response and verifies all twenty cards/explanations survive with no request for the third page.
+- Existing one-click entry, AI review, source discovery and workspace journeys remain green. Isolated source/model fixtures only; no live AI calls.
 
-# Current verification — TenderHut increment, 12 September 2026
+# Verification — one-click matching entry
 
-- Production Webpack build, TypeScript, ESLint and diff whitespace checks passed.
-- Unit suite: **62 passed** across five files, including source normalization, profile search planning, ZIP validation and the extension credential boundary.
-- Full production browser suite: **5 passed, 1 skipped (2.4 minutes)**. The skipped case needs an optional local PDF fixture. The linked official PDF browser test and transferred ZIP/PDF extraction test both passed.
-- Browser coverage includes first-visit discovery, upstream search/pagination metadata, refresh on navigation/reload, no idle polling, stale-cache fallback, stable saved identities/versions, private profile matching, attachment pairing/replay rejection, PDF extraction and cross-account file isolation. Existing private preparation and AI review journeys also passed.
-- Actual anonymous TenderHut listing/filter metadata/search/detail requests passed. A bounded live software query and one real Gemini explanation passed source-quote grounding; this does not establish exhaustive retrieval or ranking accuracy.
-- Actual signed-in Firefox extension downloading remains **a manual check**. Automated tests cover its credential boundary and the local import flow; no user tokens were replayed.
+- TypeScript, ESLint, 50 unit tests and production build pass.
+- Five existing browser journeys passed, including ten-result scrolling and retry. The new entry-link test passed in 16.6 seconds after adding a URL wait before its back-navigation assertion (19.3 seconds with setup/teardown).
+- The entry regression covers incomplete profiles, discovery and overview links starting exactly once, new run IDs despite existing results, reload/back persistence, and the in-panel new-search button.
+- Fresh isolated database, source fixtures and model stubs; no live AI calls.
 
-Reproduce with `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`, then `BIDDESK_E2E_PRODUCTION=1 npm run test:e2e`. Browser fixtures are restricted to an isolated random test database and cleaned by teardown. Run `npx tsx scripts/tenderhut-smoke.ts` for a small live public-source check; adding `--ai` consumes a Gemini explanation using public metadata.
+# Verification — explained matching pages
 
-See [current implementation notes](TENDERHUT_IMPLEMENTATION_NOTES.md) for setup, file map and limitations. Earlier results below are historical and describe the previous snapshot implementation.
+The matching iteration uses a stable ranked shortlist, publishes ten explained results per page and loads subsequent pages on scroll. Source retrieval/preparation remains bounded to 150 retrieved / 30 shortlisted notices.
 
----
+- TypeScript, ESLint, 50 unit tests and the production Webpack build pass.
+- New unit coverage requires exactly one grounded explanation per requested tender, rejects missing/duplicate/foreign/unsupported output, checks provider schema conversion, hides unrequested candidate/model input data, and invalidates results when regions change.
+- Four existing production browser journeys passed with the new API. The pagination test correctly encountered the injected quota error but initially used an ambiguous alert selector that also matched Next.js's route announcer; the selector was narrowed to the matching panel.
+- The pagination test covers 10 → 20 → 25 results, every card explained, automatic scrolling, failure halfway through a batch without publishing partial cards, cached retry, repeated-page idempotency, end-of-list behavior, reload persistence, owner isolation and profile-region staleness. The corrected test passed in 43.7 seconds (46.9 seconds including setup/teardown). All five browser journeys are verified: the four existing journeys in the full run and the corrected pagination journey in its targeted rerun.
+- Tests use fresh isolated databases and model/source fixtures. No live Gemini calls or workspace-data changes were made for this increment. Earlier run formats are not resumed; start a new search.
 
-# Verification — 11 September 2026
+# Verification — sole-source cleanup, 12 September 2026
 
-## Passed
+## Completed checks
 
-| Check | Result |
-| --- | --- |
-| Atlas configuration and connection | Connected successfully; credentials never printed |
-| Shared real snapshot | 77 records; second import: 2 PDF-enriched updates, 75 unchanged, 0 rejected |
-| Snapshot integrity | SHA-256 matches committed manifest |
-| TypeScript | `npm run typecheck` passed |
-| ESLint | `npm run lint` passed |
-| Domain tests | 24 tests passed with `npm test` |
-| Production build | `npm run build` passed using Next.js Webpack |
-| Development browser rehearsal | 2 tests passed, 48.6 seconds |
-| Final production browser rehearsal | 2 tests passed, 44.6 seconds, including real source PDF |
-| Browser asset secret scan | 30 built assets checked; configured Atlas URI and auth secret absent |
-| Test cleanup | Temporary test databases removed by guarded teardown; demo database unchanged by tests |
+- TypeScript and ESLint pass.
+- Unit suite: 47 passing tests across five files. Retired source-parser/downloader cases were removed; PDF byte extraction, citation identity, source normalization, domain checks, ZIP validation and extension boundaries remain covered.
+- Production Webpack build passes, including its TypeScript check. The sandbox build could not launch the configuration subprocess successfully; the approved build outside the sandbox passed.
+- Whitespace/diff checks pass.
 
-The browser tests are long end-to-end journeys, not two isolated button checks. They exercise:
+## Browser coverage
 
-- Signup/login/logout and logged-out API rejection.
-- Real snapshot listing/search, favorites across reload, comparison, and scoped CSV export.
-- CSV mapping/validation with an invalid monetary row and a successful private import.
-- Identical import deduplication, evidenced eligibility assessment, bid creation, task notes/completion persistence.
-- An imported requirement change reopening a task while retaining evidence; unchanged retry; content reversion preserving three versions; stale bid revision rejection.
-- Two-user denial of private tender/document/version access, private amendment writes and private export contents.
-- Notification creation/deduplication and mark-read persistence.
-- Award import and company-profile save through the browser.
-- Calendar/results navigation, loaded mobile overview, no mobile horizontal overflow, and no uncaught page errors during the main journey.
-- Browser PDF worker extraction of the real PRL PT-18 PDF, user review/import, and persisted document text.
+Production browser tests use a new, empty random test database and deterministic provider/AI fixtures. No snapshot seed, public source call, live model call or external PDF fixture is required.
 
-Unit tests cover exact/missing financial evidence, mismatched financial periods/currencies, certificate expiry through deadline, unconfirmed requirements, IST date-only closure, source-status precedence, affected-task selection, canonical change detection, spreadsheet formula escaping, malformed URLs/dates, invalid money/duplicate requirement IDs, and source-parser structure/provenance.
+The suite covers:
 
-## Reproduce the final browser run
+- Removed page routes return 404; removed import/award/download/catalogue-matching actions are rejected; document text cannot be attached without a tender/version.
+- Provider discovery, navigation freshness, cached source outages, saving and matching.
+- Comparing provider tenders and uploading actual PDF bytes in the browser.
+- Private requirements, bid tasks, deadlines, calendar, source versions and notification effects, and account isolation.
+- AI extraction/application, grounded eligibility, human judgments, stale evidence, cache reuse, concurrency and allowance handling.
+- Extension pairing, real ZIP/PDF extraction, grant replay rejection and attachment isolation.
 
-```sh
-npm run build
-BIDDESK_E2E_PRODUCTION=1 BIDDESK_TEST_PDF=/absolute/path/to/NIT_PT_18_07092026.pdf npm run test:e2e
-```
+The first browser run passed both AI tests and exposed stale notification-dialog state after source refresh, plus a test assumption about a shared fixture being absent. Tender detail now refreshes workspace state after source retrieval, and the fixture assertion now verifies a new upstream search. The corrected full production suite passed **4/4 tests in 56.1 seconds**, with no skipped cases. Screenshot review then identified and corrected a sidebar selector regression from removing the import link; the final production build and affected browser journey then passed (1/1, 22.0 seconds). Desktop and mobile screenshots were inspected and the sidebar layout is correct.
 
-Obtain the PDF from the original source linked in DATA_SOURCES.md. It is not bundled into the repository. Without `BIDDESK_TEST_PDF`, the source-PDF test is skipped explicitly. Screenshots/traces and the test database cleanup marker are ignored under `.local` / `test-results`.
+## Development database cleanup
 
-## Limits of this verification
+An explicit one-time cleanup (not an application migration) removed 77 non-provider tenders and their dependent records: 79 versions, two source-change events, one review, three analysis documents, two drafts and one set of findings. It dropped retired award/import-run/catalogue-profile/catalogue-match/catalogue-document collections and removed obsolete legacy indexes. The 32 provider tenders, account/company data and provider preparation records were preserved. Non-provider tender count after cleanup: zero.
 
-No deployment, high-volume load test, exhaustive accessibility audit, or complete scanned/encrypted-PDF corpus test was performed. Large version histories and workspace payloads need pagination before hosted use at scale. No genuine official amendment pair or award dataset was preloaded; those test inputs are isolated, labelled fixtures. The shared catalogue is real source metadata, not a freshness guarantee or nationwide coverage claim.
+Automatic approval review rejected an initial broader cleanup that also cleared all AI caches and modified provider records. Those operations were removed; the narrower legacy-only cleanup was approved and completed. Shared AI caches and provider documents/fields were not purged. Old derived cache entries have no retired endpoint/UI consumer; no compatibility code was added for them.
 
-Turbopack production builds failed because their CSS subprocess could not bind a local socket in the execution environment. The supported Webpack production path compiled and passed the full browser rehearsal. The first sandboxed Webpack attempt also failed to capture a TypeScript subprocess; the authorized build outside that restriction succeeded without disabling type checks.
+The obsolete committed source snapshot artifacts and local catalogue review/recheck scratch files were removed. Credentials were not changed. Dependencies and lockfile removed only the unused CSV parser and its types; no dependency upgrades were made.
 
-## Gemini increment — 12 September 2026
+## Limits
 
-- TypeScript, ESLint, `git diff --check`: pass. Unit suite: **45 passed**.
-- Production Webpack build: pass, including `/api/ai` and traced PDF worker.
-- Existing production snapshot/private import/amendment workflow and official PRL PDF browser extraction: pass (20.9s and 3.5s).
-- Final AI production browser rerun: **2 passed in 50.0s**. Covers consent, sourced draft application, private eligibility, human evidence judgments, stale judgments/results, semantic recommendations, shared-record preservation, tenant isolation, repeated requests, atomic concurrent deduplication and quota rejection. An earlier failure was a test selector matching hidden per-requirement inputs; the selector was corrected. No application behavior was bypassed.
-- Desktop and mobile AI recommendation screenshots inspected; mobile has no horizontal overflow. Screenshots use clearly labelled fixtures in the isolated test database, not demo catalogue records.
-- Actual official PDF fetch/extraction: 9 successful documents out of 10 attempted; one timed out and was skipped. Nine reviewed scopes published and idempotently restored from `data/public/isro-matching-scopes.json`.
-- Configured secret values found in generated browser assets: **0**.
-- **Live Gemini verification pending**: no `GEMINI_API_KEY` in `.env.local`. Provider-model access, response quality, true token usage and ranking quality were not established by deterministic tests. See `docs/GEMINI_IMPLEMENTATION_NOTES.md` for the live check sequence and remaining evaluation limits.
-
-
-### Live Gemini follow-up
-
-The user subsequently added the key. `test:ai:live` now passes against real Gemini 3.6 Flash and Gemini Embedding 2: six grounded items, source-citation validation, a nonempty conservative cited eligibility response, correct laboratory/civil ordering and a nonempty grounded explanation. Invalid dates and an unsupported requirement were discarded, so completeness/accuracy remains a review task. See the Gemini notes for the model migration, provider-schema correction and test limitations. Unit suite now has 46 passing tests. Earlier “pending key” entries above describe the initial implementation stage.
-
-### Linked PDF Read document regression
-
-Reproduced a web-runtime worker payload bug: the 735,583-byte official PRL PDF arrived as a numeric-key object, and the worker converted it to empty bytes. Corrected transport to a size-checked base64 envelope and exposed safe, specific document errors. New browser test downloads and reads the official PDF, verifies RFSoC source text, and checks cached repeat identity. Development: 1 passed (34.1s); production: 1 passed (28.8s). Production build, TypeScript, ESLint, diff checks and 48 unit tests pass. No Gemini calls were made for this fix. User confirmed free-tier/public-or-non-sensitive-only inputs; continuity notes record that preference.
-
-### Citation identity regression
-
-Diagnosed the user's all-fields-rejected drafts against actual saved source pages: quote text matched, but citations referenced Mongo `_id`. Fixed model input to expose only canonical `id` and selected document data. Real app-service rechecks of both affected public PDFs retained five fields each without unsupported-citation warnings; the separate invalid PRL deadline remained rejected. No findings were confirmed automatically. TypeScript, lint and 49 unit tests pass, including the ID/metadata regression.
-
-### Source comparison regression
-
-Corrected false conflicts for the GNSS notice: same complete ISTRAC TR identifier in two explicit reference formats, and same calendar date at different precision. Live read-only verification of the saved findings returned no conflicts, two explanatory notes, and the unchanged snapshot deadline `2026-09-29T02:00:00+05:30`. Tests ensure different identifiers, dates and explicit times still conflict, while equivalent time zones compare equal. Typecheck, lint and 50 unit tests pass. No Gemini calls or source-data mutations.
+No new live-provider or paid-model quality smoke check was needed for these removals. Tests use deterministic fixtures and do not establish live provider uptime. The real signed-in Firefox upstream attachment download still requires a manual check. No deployment, commit or push was performed. Other conditional issues in the earlier UI audit remain follow-up work unless marked resolved there.

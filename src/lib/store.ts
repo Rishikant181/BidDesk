@@ -1,28 +1,26 @@
 import { createHash, randomUUID } from "node:crypto";
-import type { Filter, ClientSession } from "mongodb";
+import type { ClientSession } from "mongodb";
 import { getDb, getClient } from "./db";
 import { tenderSchema, type Tender, type TenderInput, type Version, type Bid, type Requirement, type Task } from "./schemas";
-import { changesBetween, impactedTasks, stableStringify } from "./domain";
+import { changesBetween, stableStringify } from "./domain";
 
-export const visibleTo = (ownerId: string): Filter<Tender> => ({$or:[{ownerId:null},{ownerId}]});
-export async function tenderFor(id: string, ownerId: string) {
-  const db = await getDb();
-  const t = await db.collection<Tender>("tenders").findOne({id,...visibleTo(ownerId)});
+export const sourceTenderFilter = {id: /^th-\d+$/};
+export async function tenderFor(id: string) {
+  if (!sourceTenderFilter.id.test(id)) throw new Error("NOT_FOUND");
+  const t = await (await getDb()).collection<Tender>("tenders").findOne({id});
   if (!t) throw new Error("NOT_FOUND");
   return t;
 }
-export async function saveTender(raw: unknown, ownerId: string | null, existingId?: string, checkedAt = new Date().toISOString(), provider = false) {
+export async function saveTender(raw: unknown, id: string, checkedAt = new Date().toISOString()) {
+  if (!sourceTenderFilter.id.test(id)) throw new Error("Invalid source tender ID");
   const session = getClient().startSession();
-  try { return await session.withTransaction(()=>saveVersion(raw,ownerId,existingId,checkedAt,session,provider)); } finally { await session.endSession(); }
+  try { return await session.withTransaction(()=>saveVersion(raw,id,checkedAt,session)); } finally { await session.endSession(); }
 }
-async function saveVersion(raw:unknown, ownerId:string|null, existingId:string|undefined, checkedAt:string, session:ClientSession, provider=false) {
+async function saveVersion(raw:unknown, id:string, checkedAt:string, session:ClientSession) {
   const input = tenderSchema.parse(raw);
   const db = await getDb();
-  const existing = await db.collection<Tender>("tenders").findOne(existingId ? {id:existingId,ownerId} : {ownerId,source:input.source,reference:input.reference},{session});
-  if (existingId && !existing && !provider) throw new Error("NOT_FOUND");
-  if (!provider && existing && (input.reference !== existing.reference || input.source !== existing.source)) throw new Error("An amendment must retain the source and reference. Import a re-tender separately.");
+  const existing = await db.collection<Tender>("tenders").findOne({id},{session});
   const contentHash = createHash("sha256").update(stableStringify(input)).digest("hex");
-  const id = existing?.id || (provider ? existingId! : randomUUID());
   if (existing && stableStringify(tenderSchema.parse(existing)) === stableStringify(input)) {
     await db.collection<Tender>("tenders").updateOne({id},{$set:{checkedAt}},{session});
     return {id,result:"unchanged"};
@@ -31,20 +29,20 @@ async function saveVersion(raw:unknown, ownerId:string|null, existingId:string|u
   const hash = createHash("sha256").update(id+(existing?.currentVersion || "")+contentHash).digest("hex");
   const versionId = hash.slice(0,32);
   const observedAt = new Date().toISOString();
-  const version: Version = {id:versionId,tenderId:id,ownerId,hash,observedAt,snapshot:input};
+  const version: Version = {id:versionId,tenderId:id,hash,observedAt,snapshot:input};
   await db.collection<Version>("versions").insertOne(version,{session});
   if (existing) {
     const before = tenderSchema.parse(existing);
     await db.collection("changeEvents").updateOne({id:versionId},{$setOnInsert:{id:versionId,tenderId:id,before,after:input,at:observedAt}},{upsert:true,session});
   }
-  const t: Tender = {...input,id,ownerId,currentVersion:versionId,createdAt:existing?.createdAt || observedAt,updatedAt:observedAt,checkedAt};
-  // Optimistic version check prevents concurrent imports from overwriting another version.
+  const t: Tender = {...input,id,currentVersion:versionId,createdAt:existing?.createdAt || observedAt,updatedAt:observedAt,checkedAt};
+  // Optimistic version check prevents concurrent source updates from overwriting another version.
   if (existing) {
-    const changed = await db.collection("tenders").replaceOne({id,currentVersion:existing.currentVersion},{...t,identityKind:provider?"tenderhut":"legacy"},{session});
-    if (!changed.matchedCount) throw new Error("This tender changed during import. Reload and retry.");
-  } else await db.collection("tenders").insertOne({...t,identityKind:provider?"tenderhut":"legacy"},{session});
+    const changed = await db.collection("tenders").replaceOne({id,currentVersion:existing.currentVersion},t,{session});
+    if (!changed.matchedCount) throw new Error("This tender changed during retrieval. Reload and retry.");
+  } else await db.collection("tenders").insertOne(t,{session});
   await reconcileEvents(id,session);
-  return {id,result:existing ? "updated" : "imported"};
+  return {id,result:existing ? "updated" : "created"};
 }
 async function reconcileEvents(tenderId: string, session:ClientSession) {
   const db = await getDb();
@@ -55,10 +53,8 @@ async function reconcileEvents(tenderId: string, session:ClientSession) {
   const keys = changesBetween(event.before,event.after).map(v=>v.key);
   const bids = await db.collection<Bid>("bids").find({tenderId},{session}).toArray();
   for (const bid of bids) {
-    let tasks = impactedTasks(bid.tasks,event.before.requirements,event.after.requirements);
-    // Private interpretations of a changed public document require explicit review.
-    if (keys.includes("documents")) tasks = tasks.map(t=>t.requirementId ? {...t,done:false,changed:true} : t);
-    await db.collection<Bid>("bids").updateOne({id:bid.id,revision:bid.revision},{$set:{tasks,tenderVersion:event.id,updatedAt:event.at},$inc:{revision:1},$push:{events:{at:event.at,message:`Imported update: review ${keys.join(", ")}.`}}},{session});
+    const tasks = bid.tasks.map(t=>t.requirementId ? {...t,done:false,changed:true} : t);
+    await db.collection<Bid>("bids").updateOne({id:bid.id,revision:bid.revision},{$set:{tasks,tenderVersion:event.id,updatedAt:event.at},$inc:{revision:1},$push:{events:{at:event.at,message:`Source update: review ${keys.join(", ")}.`}}},{session});
   }
   const favorites = await db.collection<{ownerId:string;tenderId:string}>("favorites").find({tenderId},{session}).toArray();
   for (const ownerId of new Set([...bids.map(b=>b.ownerId),...favorites.map(f=>f.ownerId)])) {

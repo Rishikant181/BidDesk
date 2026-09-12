@@ -29,4 +29,4 @@ export function htmlObservation(html:string,base:Observation,at=new Date().toISO
 }
 export function detailPath(o:Pick<Observation,'source'|'slug'>){if(!/^[a-z0-9_]+$/.test(o.source)||! /^[a-z0-9-]+$/i.test(o.slug))throw new Error('Invalid tender path.');return `/tender/${o.source}/${o.slug}`;}
 export function mergeFields(old:Partial<TenderInput>,incoming:Partial<TenderInput>){const next={...old};for(const [k,v] of Object.entries(incoming))if(v!==''&&v!==null&&v!==undefined)Object.assign(next,{[k]:v});return next;}
-export function asTender(o:Observation):Tender{return {...tenderSchema.parse(o.fields),id:o.id,ownerId:null,currentVersion:'unmaterialized',createdAt:o.at,updatedAt:o.at,checkedAt:o.at};}
+export function asTender(o:Observation):Tender{return {...tenderSchema.parse(o.fields),id:o.id,currentVersion:'unmaterialized',createdAt:o.at,updatedAt:o.at,checkedAt:o.at};}
