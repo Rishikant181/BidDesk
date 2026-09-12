@@ -19,9 +19,13 @@
     "data:refresh": "tsx scripts/manage.ts refresh",
     "data:collect": "tsx scripts/collect.ts",
     "predev": "node scripts/pdf-worker.mjs",
-    "prebuild": "node scripts/pdf-worker.mjs"
+    "prebuild": "node scripts/pdf-worker.mjs",
+    "ai:check": "tsx scripts/ai.ts check",
+    "ai:prepare-catalogue": "tsx scripts/ai.ts prepare",
+    "test:ai:live": "tsx scripts/ai.ts live"
   },
   "dependencies": {
+    "@google/genai": "^2.21.0",
     "better-auth": "^1.7.4",
     "cheerio": "^1.2.0",
     "clsx": "^2.1.1",

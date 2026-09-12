@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { citationSchema } from "./ai/contracts";
 
 export const safeUrl = z.string().trim().max(2000).refine(v => {
   if (!v) return true;
@@ -17,9 +18,11 @@ export const requirementSchema = z.object({
   threshold: money, value: z.string().max(300).default(""), period: z.string().max(100).default(""),
   clause: z.string().max(500).default(""), page: z.number().int().positive().nullable().default(null),
   confirmed: z.boolean().default(false),
+  citations: z.array(citationSchema).max(8).optional(), origin: z.enum(["manual","ai-assisted"]).optional(), complex: z.boolean().optional(),
 });
 export type Requirement = z.infer<typeof requirementSchema>;
 export const documentSchema = z.object({
+  analysisDocumentId:z.string().max(100).optional(),
   name: z.string().min(1).max(300), url: safeUrl.default(""),
   pages: z.array(z.object({ page: z.number().int().positive(), text: z.string().max(25000) })).max(250).default([]),
 }).refine(d => d.pages.reduce((sum,p) => sum + p.text.length, 0) <= 700000, "Document text limit is 700,000 characters");
@@ -45,6 +48,8 @@ export const companySchema = z.object({
   regions: z.array(z.string().max(100)).max(50).default([]), turnover: money,
   turnoverPeriod: z.string().max(100).default(""), turnoverEvidence: z.string().max(500).default(""),
   experience: z.string().max(5000).default(""),
+  aiProfile: z.string().max(6000).default(""),
+  projects: z.array(z.object({id:z.string().min(1).max(100),title:z.string().max(200),scope:z.string().max(2000),completedAt:dateValue,evidence:z.string().max(500),shareWithAI:z.boolean().default(false)})).max(20).default([]),
   certifications: z.array(z.object({ name: z.string().max(100), expiresAt: dateValue, evidence: z.string().max(500) })).max(50).default([]),
 });
 export type Company = z.infer<typeof companySchema>;

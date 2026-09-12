@@ -1,6 +1,14 @@
 # Implementation notes for the next session
 
-Last updated: 11 September 2026. The user reviewed the app, said it looks good, and requested these continuity notes. The implementation is complete for the agreed snapshot POC; there is no unfinished feature currently assigned.
+Last updated: 12 September 2026. The snapshot POC is implemented. The subsequent three-feature Gemini increment is now implemented locally; live Gemini smoke checks now pass after configuring the key and fixing model/schema compatibility.
+
+## Latest increment — Gemini
+
+Read [GEMINI_IMPLEMENTATION_NOTES.md](GEMINI_IMPLEMENTATION_NOTES.md) before continuing AI work. It records the implementation, real source preparation, commands, tests, remaining limits and resume steps. [GEMINI_IMPLEMENTATION_PLAN.md](GEMINI_IMPLEMENTATION_PLAN.md) is the accepted design, not a claim that every live quality gate has passed.
+
+Implemented: official linked PDF retrieval with local-upload fallback; sourced structured drafts and private findings; selected company/project evidence; conservative AI-assisted eligibility plus separate human judgments; semantic matching over real reviewed scopes; cache, concurrency and daily allowances; operator preparation and isolated browser tests. Nine official PDFs were retrieved and reviewed; their scope artifact is in `data/public/isro-matching-scopes.json` and matching profiles are in Atlas. The 77-record snapshot was not refreshed.
+
+`GEMINI_API_KEY` is now configured. Live checks pass with `gemini-3.6-flash` and `gemini-embedding-2`. The initially chosen 2.5 Flash appeared in model lookup but rejected token-count requests for new users. Generation now uses a simplified provider schema while Zod enforces all original bounds locally. Preserve `.env.local`; see the Gemini notes for the exact scope of live verification. The user confirmed Gemini free tier: use only public or non-sensitive demo inputs. Test stubs are restricted to fresh random test databases and cannot serve the real demo.
 
 ## Start here
 
@@ -18,7 +26,7 @@ Repository: `/var/home/rishikant/Desktop/Boxes/Personal/Repositories/BidDesk`. T
 - **One-time snapshot of real Indian notices.** The user considered freshness, scraping and documented public APIs, then explicitly chose to continue with the snapshot plan. API research is archived in `docs/TENDER_API_RESEARCH.md`; no such integration is active.
 - No invented public tender, award, price, or amendment records. Unknown data must remain unknown. Imported timestamps do not establish current source availability.
 - One private workspace per authenticated account, with a shared read-only catalogue and private imports/reviews/preparation.
-- Explicit eligibility rules with source/evidence review; no paid LLM or automatic interpretation of arbitrary tender documents.
+- Conservative eligibility rules plus optional Gemini suggestions with explicit source/evidence review. The later AI request supersedes the original no-LLM implementation scope.
 
 ## Implemented workflows
 
@@ -111,8 +119,25 @@ These are limitations or candidates for a later request, not a currently authori
 - No OCR or stored/synced private PDF binaries. File limit 20 MB; 250 pages, 25,000 characters/page, 700,000/document. Manual review remains necessary.
 - CSV batches up to 100 rows, 2 MB API body limit. Large text imports may need smaller batches.
 - Small-catalogue read caps: 2,000 discovery/export/workspace tenders, 200 bids, 500 awards, 50 notifications and 50 full versions on detail. Large version/document responses need pagination before hosted use at scale.
-- No email recovery/verification provider, enterprise invitations/roles, official submission, paid AI, notifications delivery, or monetization.
+- No email recovery/verification provider, enterprise invitations/roles, official submission, notifications delivery, or monetization.
 - No deployment/load test/exhaustive accessibility or scanned/encrypted-PDF corpus test. Recheck hosting limits and use eligibility if deployment is requested later.
 - The user authorized committing and pushing the completed implementation and notes. Check the local branch and upstream status when resuming; do not assume later changes are already backed up.
 
 Use `docs/DEMO_WALKTHROUGH.md` for the presentation sequence. Update this note after meaningful follow-up work so the next session has a trustworthy continuation point.
+
+
+## Read document fix
+
+The user reported failures on almost all linked PDFs. Reproduced in a real development browser request: 735,583 downloaded bytes arrived in the PDF worker as a plain numeric-key object, so `new Uint8Array(workerData)` produced zero bytes. Use the explicit `{pdfBase64}` envelope in `documents.ts` / `pdf-extract-worker.mjs`; do not revert to a naked typed-array payload. Both sides retain size limits. Known document errors now use safe `AiError` messages instead of the generic database/source failure. New `document-read.spec.ts` exercises a real linked official PRL PDF and cached repeat read, without any Gemini call. Unit suite now has 48 passing tests, including actual PDF-worker extraction and empty-input rejection.
+
+## Citation identity fix
+
+The user next reported all fields rejected as unsupported citations. Atlas comparison proved the quoted words matched, but every citation used the document's Mongo `_id` instead of its canonical `id`. The extraction prompt previously spread the entire database record, exposing both. `extractionInput` in `grounding.ts` now explicitly sends only canonical document ID, name, selected pages, coverage and the ID rule; both the app and live CLI use it. Exact quote/page/ID validation remains strict. A regression test ensures database/owner metadata cannot leak into this model input.
+
+Re-ran the user's two affected public official-PDF drafts through the real `extractChunk` service (two bounded Gemini calls). PRL RFSoC and ISTRAC GNSS drafts each retained five fields, with no unsupported citations. Saved drafts only; no shared metadata or confirmed private findings were applied. PRL still rejected an invalid closesAt suggestion; this separate warning requires source review. Reload the tender and open the updated draft rather than spending another call. Unit suite: 49 pass; lint/typecheck pass.
+
+## Source comparison fix
+
+GNSS findings exposed false conflicts from literal string comparison. `ai/conflicts.ts` now recognizes the two explicit ISTRAC PUBLIC TENDER NOTICE / PURCHASE formats only when the complete TR identifier matches. Date-only vs timestamp suggestions on the same stated date are precision differences, and equivalent fully specified instants are equal; genuine changed dates/times/references remain conflicts. The original precise snapshot deadline is never replaced. Numeric formatting differences are also normalized for amount comparison.
+
+`applyDraft`, saved-state loading, eligibility and matching publication share this comparison. Existing saved findings are reconciled on read without rewriting source records or auto-confirming requirements. UI shows comparison notes. Verified the user's existing GNSS findings now have zero conflicts and retain `2026-09-29T02:00:00+05:30`; no Gemini call was needed. Unit suite: 50 pass, including distinct tender IDs/dates/times and equivalent time zones; lint/typecheck pass.

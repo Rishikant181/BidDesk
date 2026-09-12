@@ -45,3 +45,9 @@ No genuine official amendment pair was preloaded. Do not invent a corrigendum li
 Show Tender results: it truthfully starts empty because no award dataset was verified. The import/search workflow supports original published award notices. Show notifications if a real imported update exists, then sign out/sign back in to demonstrate the private workspace.
 
 Do not run data collection, refresh the source snapshot, delete database records, or change infrastructure during the presentation. Data access requires internet for Atlas; original document links also require the source website to be reachable.
+
+## Optional Gemini presentation
+
+Configure the server key and run the live checks in [Gemini implementation notes](GEMINI_IMPLEMENTATION_NOTES.md) before presenting AI output. Until then the real workspace shows setup/errors, not simulated model results.
+
+Save a public/non-sensitive capability profile, open an existing tender, and choose **Analyze documents → Read document**. Select readable pages and approve sending their text to Gemini. Review exact citations before saving selected private findings. Show the Eligibility evidence review and a separate human judgment, then demonstrate **AI recommendations** with the prepared real scope excerpts. Explain the displayed matching coverage and the dated snapshot. Supporting evidence and semantic relevance are not qualification guarantees.

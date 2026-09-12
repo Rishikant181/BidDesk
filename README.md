@@ -91,3 +91,11 @@ Without that variable, the optional source-PDF test is explicitly skipped. The t
 The original decisions remain in [PROPOSAL.md](PROPOSAL.md) and [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md). API research is archived in [docs/TENDER_API_RESEARCH.md](docs/TENDER_API_RESEARCH.md); those APIs are not integrated.
 
 For continuing development in a later session, start with [Implementation notes](docs/IMPLEMENTATION_NOTES.md).
+
+## Gemini assistance
+
+Document drafts, AI-assisted evidence review, human judgments and semantic recommendations are implemented. Add `GEMINI_API_KEY` to `.env.local` and restart; live checks now pass with Gemini 3.6 Flash and Gemini Embedding 2. Manual workflows remain usable without it.
+
+Start with **Company profile → AI-shareable capabilities**, then **Open tender → Analyze documents**. Review source excerpts before applying suggestions. **AI recommendations** ranks described notices only; nine reviewed PDF scopes supplement the original snapshot.
+
+See [Gemini setup, walkthrough and implementation notes](docs/GEMINI_IMPLEMENTATION_NOTES.md) for configuration, real-data preparation, limits and the live verification command. The [accepted implementation plan](docs/GEMINI_IMPLEMENTATION_PLAN.md) records the design decisions.

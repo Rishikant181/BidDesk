@@ -110,7 +110,11 @@ export async function POST(req:Request) {
       for(let i=0;i<records.length;i++) {
         try {
           const parsed=tenderSchema.parse(records[i]);
-          results.push({row:i+1,...await saveTender(parsed,u.id,body.existingId ? z.string().parse(body.existingId) : undefined)});
+          const saved=await saveTender(parsed,u.id,body.existingId ? z.string().parse(body.existingId) : undefined);
+          const tender=await tenderFor(saved.id,u.id);
+          const documentIds=parsed.documents.map(d=>d.analysisDocumentId).filter(Boolean);
+          if(documentIds.length)await db.collection("aiDocuments").updateMany({ownerId:u.id,id:{$in:documentIds},tenderId:""},{$set:{tenderId:saved.id,version:tender.currentVersion}});
+          results.push({row:i+1,...saved});
         }catch(e) {results.push({row:i+1,result:"rejected",error:e instanceof ZodError ? e.issues.map(i=>i.message).join("; ") : e instanceof Error && e.message==="NOT_FOUND" ? "Only your private tenders can be amended here" : "Import failed; check data and connection"});}
       }
       await db.collection("importRuns").insertOne({ownerId:u.id,at:now,source:"User import",results}); return json({results});

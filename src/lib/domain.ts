@@ -20,6 +20,7 @@ export function formatMoney(value: number | null | undefined, currency = "INR") 
 export type Assessment = { requirementId: string; outcome: "appears satisfied" | "not satisfied" | "needs review"; reason: string; evidence: string };
 export function assess(r: Requirement, c: Company, closesAt = "", now = new Date()): Assessment {
   const result = (outcome: Assessment["outcome"], reason: string, evidence = ""): Assessment => ({requirementId:r.id,outcome,reason,evidence});
+  if (r.complex) return result("needs review","This condition contains alternatives, formulas or exceptions that require manual assessment.");
   if (!r.confirmed) return result("needs review","Confirm this requirement against the original clause first.");
   if (!r.clause && !r.page) return result("needs review","Add a clause or page reference to support this requirement.");
   if (r.type === "turnover") {
