@@ -2,6 +2,8 @@
 
 A local tender discovery and bid preparation POC using real Indian notice metadata, Next.js, and MongoDB Atlas. No paid AI, hosting, payment integration, or live scraper is required.
 
+Next increment, **proposal only**: [TenderHut discovery and profile matching](docs/TENDERHUT_INTEGRATION_PROPOSAL.md). This records the latest decisions and implementation handoff; the instructions below describe the currently implemented snapshot application.
+
 ## Run locally
 
 Tested with Node **24.18.0** and npm **11.16.0**. Use Node 24 LTS.
