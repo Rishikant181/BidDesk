@@ -2,7 +2,7 @@
 
 Date: 12 September 2026. **Planning only; not implemented.**
 
-This document records the latest agreed direction and the implementation handoff. It supersedes the snapshot-only product direction in earlier proposals for the next increment, but does not describe current application behavior. The user explicitly stopped implementation to continue planning, then requested saving this proposal. Wait for an implementation request before changing application code. No deployment, monetization, commit or push is included in this documentation request.
+This document records the latest agreed direction and the implementation handoff. It supersedes the snapshot-only product direction in earlier proposals for the next increment, but does not describe current application behavior. The user explicitly stopped implementation to continue planning. The latest request authorizes updating, saving, committing and pushing these planning documents only. Wait for an implementation request before changing application code. No deployment or monetization is included. Read [TENDERHUT_IMPLEMENTATION_PLAN.md](TENDERHUT_IMPLEMENTATION_PLAN.md) for the execution sequence and optional attachment phase.
 
 ## Agreed experience
 
@@ -21,7 +21,7 @@ BidDesk remains a usable Indian tender discovery and preparation POC, running lo
 
 ## Retrieval, persistence and fallback
 
-Use a server-side adapter for the public JSON endpoints; HTML scraping is unnecessary for listings. Keep the provider replaceable because these are undocumented website endpoints.
+Use a server-side adapter for public JSON search and public rendered HTML detail refresh. Initial detail rendering uses the search response, including `detail_json`; opening/reloading a tender retrieves `/tender/{source}/{slug}` and updates only fields present there. Do not depend on a separate JSON detail endpoint. Keep the provider replaceable because these are undocumented website endpoints.
 
 MongoDB remains necessary for saved tenders, private imports, notes, bid workflows, source versions, AI provenance and cached responses. Retained records are not a fixed seed dataset or a claim to complete national coverage.
 
@@ -49,9 +49,9 @@ Gemini is on the **free tier**. Only public or non-sensitive demo inputs are aut
 
 ## Documents and eligibility
 
-The user observed that TenderHut links to the original tender site rather than providing downloadable PDFs itself. Make **Open official tender** the primary document action. Original links may lead to a portal/search page, not an individual notice; present the tender reference for locating it.
+The user confirmed that the public JSON `url` field opens the original source. Make **Open official tender** the primary document action, without TenderHut credentials. Original links may lead to a portal/search page, not an individual notice; present the tender reference for locating it. Later captures corrected the initial assumption about attachments: TenderHut also serves authenticated attachment ZIPs itself.
 
-Retain optional PDF upload and existing supported official-PDF analysis. Do not remove working extraction code merely because this provider lacks accessible PDFs. Automatic retrieval of arbitrary official-portal PDFs, OCR, login/CAPTCHA handling and authenticated TenderHut downloads are outside this increment.
+Retain optional PDF upload and existing supported official-PDF analysis. Plan an optional second phase for an operator browser extension: retrieve attachments using the user's existing entitled TenderHut session and transfer files and provenance to the user's local BidDesk workspace. Cookies and Bearer tokens stay in the browser; no shared server-side TenderHut account. Core discovery/matching must work without the extension. Automatic retrieval of arbitrary official-portal PDFs, OCR and login/CAPTCHA bypass are outside scope.
 
 Use available titles, work descriptions and structured details for matching and summaries. Eligibility assessment may use explicit available requirements, but absent fields mean **unknown**. “Please refer Tender documents” is not an eligibility condition and cannot produce a pass.
 
@@ -63,18 +63,37 @@ Research from this planning conversation, not an official API contract:
 
 - An anonymous request to `GET /bids?sort_by=end_date&sort_dir=asc&limit=2&offset=0` returned JSON without cookies, credentials or browser-header spoofing. It reported `total: 85772`; this is a historical response count, not a guaranteed current count.
 - The user supplied working default and filtered requests with `limit=50` and complete response examples. The filtered example reported four results.
-- The public `/app` JavaScript exposed the endpoint names below. Their response shapes and anonymous accessibility, except the tested listing, still need bounded verification.
+- The public `/app` JavaScript exposed the endpoint names below. User-provided HTML and authenticated captures further established the routes described here; these were not independently replayed with the user's credentials. Unverified operations remain optional.
 
 | Endpoint | Observed purpose / caveat |
 | --- | --- |
 | `GET /bids` | Search/list: `{ total, limit, offset, bids: [...] }` |
-| `GET /bids/{id}` | Detail; verify anonymously before relying on it |
+| `GET /bids/{id}` | Observed in public JS; not required or established as the app's normal detail path |
+| `GET /tender/{source}/{slug}` | Public rendered detail HTML supplied for BPCL and Bihar notices; planned single-tender refresh path |
 | `GET /categories`, `/buyers`, `/sources` | Filter metadata; verify shapes and access |
 | `GET /sources/freshness`, `/stats`, `/stats/timeline?days=30` | Optional coverage metadata; not required for initial integration |
 | `GET /bids/{id}/amendments`, `/bids/{id}/cross-links` | Optional detail enrichment; verify access/meaning |
-| `GET /bids/{id}/documents` | Public app optionally attaches authorization; do not assume usable document bytes |
+| `GET /bids/{id}/documents` | User supplied Bearer-authenticated request returning attachment metadata, not file bytes |
+| `POST /auth/refresh` | User capture shows a refresh cookie used to obtain an access token; browser-only optional extension flow |
+| `GET /bids/{id}/documents/zip` | User reports successful ZIP download with Bearer authentication; optional extension flow |
 
-The app's download/export functions attach Bearer authorization to `/documents/{id}`, `/bids/{id}/documents/zip`, and `/bids/export`. Do not rely on those, use the user's account tokens, or bypass access controls. Local CSV export should have explicit retrieved/saved scope and must not trigger a bulk crawl.
+The public app also references authenticated `/documents/{id}` downloads and `/bids/export`; individual download behavior remains unverified. The ZIP path is sufficient for the optional phase. Do not replay credentials pasted in conversation or save them in code, docs, fixtures, logs or BidDesk. Future extension requests must use the operator's current browser session and actual account entitlement without bypassing denials. Local CSV export has explicit retrieved/saved scope and must not trigger a bulk crawl.
+
+### Additional evidence from user captures
+
+Three rendered pages share the title/highlights, labeled `dl.fields`, official-source CTA and numeric `app?bid=` link structure:
+
+| Detail path | Provider ID | Observations |
+| --- | --- | --- |
+| `/tender/bpcl/1000464360` | `6732969` | Title, reference, organisation, dates, classification and direct BPCL source link |
+| `/tender/bihar_eproc/01-2026-27-laxmipur-group-03` | `6716551` | Value `1391245.0`, pre-bid date `10/09/2026`, two categories, generic Bihar source portal and five-document notice |
+| `/tender/bpcl/1000463479` | `4817400` | Same structure, omitted financials, direct BPCL source link |
+
+Parse only the current tender's sections. Search form options and related tenders are not its attributes. JSON-LD in these examples contains breadcrumbs, not a full tender record. Use the full `h1`, not the truncated HTML title, and structured labels rather than prose summaries. `Published at` is a source label; `Publish date` is the date. Do not interpret CSS rules for awards/amendments as actual records. Missing HTML fields must not delete richer JSON data or acquire a fresh verification timestamp.
+
+The Bihar page says downloads require a Starter plan, but the user successfully downloaded through their account. Treat the text as an unverified entitlement claim, not a purchase requirement or a guarantee that all free accounts can download all files.
+
+Sanitized attachment observations: `GET /bids/4676877/documents` returned document IDs `9738618` (`DWG_FOR_TPOHMS_25_7.rar`, 10,581,691 bytes) and `9738617` (`TENDER_NOTICE.doc`, 389,120 bytes). Metadata includes `source`, `bid_no`, `filename`, `original_url`, `local_path`, `content_type`, `file_size`, `downloaded_at`; content types were empty. `local_path` is not a proven public URL and `original_url` does not establish the actual download route. A separate `GET /bids/6716549/documents/zip` request was reported to download a ZIP. These are different tender IDs: do not assume that ZIP contains the two files from the metadata example. Actual ZIP headers, contents, size, token expiry handling and extension mechanics remain to verify during implementation.
 
 Observed list parameters:
 

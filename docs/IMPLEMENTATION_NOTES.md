@@ -2,6 +2,10 @@
 
 ## Latest planning decision — TenderHut (not implemented)
 
+The concrete execution sequence is in [TENDERHUT_IMPLEMENTATION_PLAN.md](TENDERHUT_IMPLEMENTATION_PLAN.md), including identity/index migration, partial-response preservation, request-driven caching, bounded profile retrieval/AI stages and verification. This is also planning only.
+
+Latest captured evidence: public `url` links work; detail starts from listing JSON and refreshes through rendered `/tender/{source}/{slug}` HTML. Do not require a separate JSON detail endpoint. TenderHut also serves authenticated `/bids/{id}/documents/zip` downloads. The updated plan includes an optional operator browser-extension phase with browser-only credentials, paired private file transfer and bounded ZIP/PDF handling. No credentials from conversation are saved or to be replayed. The user requested committing/pushing these documentation updates and explicitly prohibited implementation.
+
 Read [TENDERHUT_INTEGRATION_PROPOSAL.md](TENDERHUT_INTEGRATION_PROPOSAL.md) before planning or implementing the next increment. It supersedes the snapshot-only direction below for future work: public TenderHut discovery with immediate default results, explicit company-profile searches followed by AI matching, and source retrieval on page refresh/navigation or opening details. **No periodic polling or manual refresh control.** MongoDB retains cached/saved records and history; PDF upload/analysis remains optional with official tender links primary. The user explicitly paused implementation and requested documentation only. No integration code has been written; wait for an implementation request. The sections below describe the existing snapshot/Gemini implementation, not this proposed integration.
 
 Last updated: 12 September 2026. The snapshot POC is implemented. The subsequent three-feature Gemini increment is now implemented locally; live Gemini smoke checks now pass after configuring the key and fixing model/schema compatibility.
