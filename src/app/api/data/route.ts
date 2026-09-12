@@ -34,7 +34,7 @@ export async function GET(req:Request) {
   try {
     const u=await user(req), db=await getDb(), p=new URL(req.url).searchParams, mode=p.get("mode") || "workspace";
     if (mode==="source-options") return json(await sourceOptions());
-    if (mode==="tenders" && p.get("favorites")!=="true" && p.get("local")!=="true") {
+    if (mode==="tenders" && p.get("favorites")!=="true") {
       const search=searchSchema.parse(Object.fromEntries([...p].filter(([,v])=>v!=="")));
       let result;try{result=await searchSource(search);}catch{return json({error:"source portal is unavailable and this search has no cached results. Try again on your next visit."},{status:503});}
       return json({tenders:result.observations.map(asTender),total:result.total,page:search.page,pages:Math.ceil(result.total/search.size),freshness:result.freshness});

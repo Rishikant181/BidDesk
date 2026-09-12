@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assess, changesBetween, csvCell, impactedTasks, stableStringify, statusOf } from "../../src/lib/domain";
+import { assess, changesBetween, csvCell, impactedTasks, stableStringify, statusOf, indiaDay } from "../../src/lib/domain";
 import { companySchema, requirementSchema, safeUrl, taskSchema, tenderSchema, dateValue } from "../../src/lib/schemas";
 const r=requirementSchema.parse({id:"finance",label:"Minimum turnover",type:"turnover",threshold:100,value:"INR",period:"FY 2025-26",clause:"4.1",confirmed:true});
 const c=companySchema.parse({turnover:100,turnoverPeriod:r.period,turnoverEvidence:"Audited accounts, p. 12"});
@@ -20,3 +20,5 @@ describe("source field boundaries",()=>{
  it.each(["javascript:alert(1)","https://","https://user:password@example.com"])("rejects unsafe source %s",v=>expect(safeUrl.safeParse(v).success).toBe(false));
  it("rejects negative money and duplicate requirement identities",()=>{expect(tenderSchema.safeParse({title:"Tender",reference:"1",value:-1}).success).toBe(false);expect(tenderSchema.safeParse({title:"Tender",reference:"1",requirements:[r,r]}).success).toBe(false);});
 });
+
+it("groups timestamp deadlines by their India date while retaining date-only precision",()=>{expect(indiaDay("2026-09-12T20:00:00Z")).toBe("2026-09-13");expect(indiaDay("2026-09-12")).toBe("2026-09-12");expect(indiaDay("2026-12-31T23:30:00Z")).toBe("2027-01-01");});

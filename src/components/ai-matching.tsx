@@ -67,12 +67,12 @@ export function AIMatching(){
   return()=>{window.clearTimeout(timer);mounted.current=false;controller.abort();};
  },[apply,canMatch,execute]);
  return <section className="panel form-panel ai-panel mt">
-  <div className="row between wrap">
+  <div className="matching-toolbar row between wrap">
    {run&&<span className="muted">{run.shown} tenders</span>}
    {canMatch&&<button className="button secondary small" disabled={busy||loading} onClick={()=>void execute()}>{run?'Search again':'Find tenders matching my profile'}</button>}
   </div>
   {!canMatch&&<p className="info-box"><Link href="/company">Complete your company capability profile</Link> to start matching.</p>}
-  {loading&&<p role="status">Loading previous matches…</p>}
+  {loading&&<p role="status" className="row"><LoaderCircle className="spin" size={18} aria-hidden="true"/>Loading previous matches…</p>}
   {busy&&!run&&<p role="status" className="row"><LoaderCircle className="spin" size={18} aria-hidden="true"/>Finding your first 10 tenders…</p>}
   {error&&<p role="alert" className="error">{error}</p>}
   {run&&<>

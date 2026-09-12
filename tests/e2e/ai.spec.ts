@@ -8,7 +8,7 @@ test("document draft, private eligibility, matching, caching and isolation",asyn
  const text="Test-only source fixture. Supply laboratory instrumentation and radio frequency measurement systems. Similar completed projects require documentary evidence and individual review.";
  const document=await ai(page.request,{action:"attach",tenderId:tender.id,version:tender.currentVersion,document:{name:"Isolated source fixture",pages:[{page:1,text}]}});
  expect((await page.request.post("/api/ai",{data:{action:"extract",documentId:document.id,pages:[1],chunkIndex:0}})).status()).toBe(200);
- await page.goto(`/tenders/${tender.id}`);await page.getByRole("button",{name:"Analyze documents",exact:true}).click();
+ await page.goto(`/tenders/${tender.id}`);await page.getByRole("tab",{name:"Documents & review",exact:true}).click();
  await page.getByLabel("Document to analyze").selectOption(document.id);await page.getByRole("button",{name:"Analyze with Gemini",exact:true}).click();await expect(page.getByRole("heading",{name:"Review AI suggestions"})).toBeVisible();
  await page.getByRole("checkbox",{name:/Scope/}).check();await page.getByRole("checkbox",{name:"Include requirement 1"}).check();await page.getByRole("checkbox",{name:/I checked this requirement/}).check();await page.getByRole("checkbox",{name:/I reviewed the selected suggestions/}).check();await page.getByRole("button",{name:"Save selected private findings"}).click();await expect(page.getByText("Source-backed private findings saved",{exact:true})).toBeVisible();
  const state=await (await page.request.get(`/api/ai?tenderId=${tender.id}`)).json();expect(state.findings.fields).toHaveLength(1);

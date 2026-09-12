@@ -6,7 +6,25 @@
 
 Read [TENDERHUT_IMPLEMENTATION_NOTES.md](TENDERHUT_IMPLEMENTATION_NOTES.md) for the current code map and limits and [UI_FUNCTIONALITY_AUDIT.md](UI_FUNCTIONALITY_AUDIT.md) for the earlier audit and current disposition.
 
-## Matching results header cleanup — latest iteration
+## UI/UX revision — 12 September 2026
+
+Implemented the approved audit plan, including the typography feedback. The workspace now uses 16px body/input text, 14px labels/metadata/actions, 18–20px opportunity titles, and 12px only for minor shell captions. Shared typography tokens, larger controls, stronger muted-text contrast, focus styles and reduced-motion support replace the previous microtype.
+
+- Discovery has explicit All tenders / Saved modes, grouped filters, applied-filter chips, an Apply filters action for advanced inputs, a compact freshness timestamp and a results-level export action. Removed the retained-catalogue UI/API branch, duplicate Discover shortcut, repeated source reminders and promotional workspace copy. Query-keyed responses prevent old results/counts/exports/pagination from appearing current during loading or after errors. Failed searches and comparison loads have retries.
+- Tender results become readable cards on mobile with deadline, value, location and save visible without horizontal scrolling. Comparison remains a horizontally scrollable comparison table by design.
+- Tender tabs are Overview, Documents & review, Eligibility and Changes. PDF upload, extension transfer, analysis and private findings share the Documents & review workflow, with a continuation to eligibility. Removed the duplicate Analyze documents action and zero-change badge. Source links retain their explicit external-link icon.
+- Shared loading, spinner, asynchronous-button, error/retry and save-bar components provide operation feedback. Bookmarks, sign-out, notifications, transfer/pair/copy/read actions, bid creation and AI actions expose pending states. Document/eligibility/attachment load failures no longer look like empty data; pairing codes remain until listing succeeds. PDF extraction reports page progress, and failed analysis shows a paused state while retaining completed work.
+- Bid tasks use compact summaries and expandable editors. New tasks stay expanded while their title changes. Bid/company forms use reachable save bars, unsaved indicators, link-navigation and reload/close protection. Company capabilities/projects are grouped before private business and financial facts; existing data and AI sharing boundaries are preserved.
+- Overview emphasizes actionable tasks and saved deadlines; empty bid history and repeated source cards are removed. Calendar uses India date keys for timestamp deadlines and mobile event counts with readable agenda details. Date-only values retain their original date.
+- Tender tabs support arrow/Home/End keyboard navigation. Mobile navigation supports Escape, focus containment/restoration and inert background/offscreen navigation. Dialogs have accessible titles; error toasts use error icons.
+
+Verification: TypeScript, ESLint, 51 unit tests, production build and all eight production browser journeys pass. After the final filter-loading and attachment-error adjustments, the production build and both affected browser journeys pass again. The added UI journey checks pending search/export consistency, failed-search retry, readable text and on-screen result essentials at 1440/1024/390px, a 720px zoom-equivalent viewport, document and attachment load recovery, mobile navigation focus/Escape, unsaved-link protection, company saving and new-task editing/persistence. Six sample workspace views were also rendered at desktop/tablet/mobile sizes with no page overflow. Tests use a fresh isolated database and source/AI fixtures. No live source/AI calls, workspace data changes, commits or deployment were performed; private configuration was preserved.
+
+## Matching loading-state spacing
+
+Added a 24px gap below the matching toolbar so the initial retrieval status, previous-match loading status and errors do not touch the action button. Verified the rendered initial-search state with held mock requests at 1440px and 390px: 24px separation and no page overflow.
+
+## Matching results header cleanup
 
 Removed the repeated matching heading, process paragraph, retrieval/shortlist counts, timestamp and generated search terms from the results panel. A compact toolbar shows the loaded tender count and a secondary “Search again” action. The initial start action remains available on direct visits without saved results. Card loading, explanations and scrolling are unchanged.
 

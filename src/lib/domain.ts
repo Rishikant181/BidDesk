@@ -7,6 +7,7 @@ export function statusOf(t: Pick<TenderInput,"sourceStatus"|"closesAt">, now = n
   const limit = t.closesAt.length === 10 ? Date.parse(`${t.closesAt}T23:59:59+05:30`) : Date.parse(t.closesAt);
   return limit < now.getTime() ? "closed" : t.sourceStatus === "unknown" ? "upcoming deadline" : "active";
 }
+export function indiaDay(value:string){if(value.length===10)return value;const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(value));return ["year","month","day"].map(key=>parts.find(p=>p.type===key)!.value).join("-");}
 export function formatDate(value?: string, withTime = false) {
   if (!value) return "Not published";
   const date = new Date(value.length === 10 ? `${value}T12:00:00+05:30` : value);

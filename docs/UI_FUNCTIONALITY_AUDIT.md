@@ -20,6 +20,10 @@ For the clarified scope, retire legacy records from active product queries and r
 
 This supersedes finding 10's original suggestion to add legacy records back into workspace payloads: consistency should now come from excluding them from active product flows. Archived records/history need not be deleted to achieve this. No cleanup or database deletion has been performed; this follow-up records scope and audit findings only.
 
+## UI revision follow-up — 12 September 2026
+
+The subsequent UI/UX revision addresses discovery pending/error state (finding 3), document/eligibility/attachment load recovery and pairing/clipboard feedback (finding 8), and India calendar grouping (finding 9). It also reorganizes document review, removes redundant controls and source reminders, establishes readable typography, and adds mobile result cards and consistent action/save patterns. See IMPLEMENTATION_NOTES.md for the implemented screen structure and final verification.
+
 ## Findings
 
 ### 1. “Use reviewed scope for matching” does not affect current matching — high
