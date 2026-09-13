@@ -1,6 +1,6 @@
 import {test,expect,type APIRequestContext} from "@playwright/test";
 async function ai(request:APIRequestContext,data:unknown){const r=await request.post("/api/ai",{data});expect(r.ok(),await r.text()).toBeTruthy();return r.json();}
-test("document draft, private eligibility, matching, caching and isolation",async({page,browser})=>{
+test("automatic private findings, eligibility, matching, caching and isolation",async({page,browser})=>{
  const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
  const signup=await page.request.post("/api/auth/sign-up/email",{data:{name:"AI verification",email:"ai@example.test",password:"Test-only-password-483!"}});expect(signup.ok()).toBeTruthy();
  await page.request.get("/api/data?mode=tenders");
@@ -9,16 +9,37 @@ test("document draft, private eligibility, matching, caching and isolation",asyn
  const document=await ai(page.request,{action:"attach",tenderId:tender.id,version:tender.currentVersion,document:{name:"Isolated source fixture",pages:[{page:1,text}]}});
  expect((await page.request.post("/api/ai",{data:{action:"extract",documentId:document.id,pages:[1],chunkIndex:0}})).status()).toBe(200);
  await page.goto(`/tenders/${tender.id}`);await page.getByRole("tab",{name:"Documents & review",exact:true}).click();
- await page.getByLabel("Document to analyze").selectOption(document.id);await page.getByRole("button",{name:"Analyze with Gemini",exact:true}).click();await expect(page.getByRole("heading",{name:"Review AI suggestions"})).toBeVisible();
- await page.getByRole("checkbox",{name:/Scope/}).check();await page.getByRole("checkbox",{name:"Include requirement 1"}).check();await page.getByRole("checkbox",{name:/I checked this requirement/}).check();await page.getByRole("checkbox",{name:/I reviewed the selected suggestions/}).check();await page.getByRole("button",{name:"Save selected private findings"}).click();await expect(page.getByText("Source-backed private findings saved",{exact:true})).toBeVisible();
+ await expect(page.getByRole("region",{name:"Private findings",exact:true})).toBeVisible();
+ await expect(page.getByRole("button",{name:"Save selected private findings"})).toHaveCount(0);
+ await expect(page.getByRole("region",{name:"Private findings"}).locator('blockquote')).toHaveCount(0);
+ await page.getByRole("button",{name:"Analyze PDF",exact:true}).click();await expect(page.getByText("Analysis complete. Private findings saved.",{exact:true})).toBeVisible();
+ await page.reload();await page.getByRole("tab",{name:"Documents & review",exact:true}).click();await expect(page.getByRole("region",{name:"Private findings"})).toBeVisible();
+ await page.screenshot({path:".local/private-findings-desktop.png",fullPage:true});
  const state=await (await page.request.get(`/api/ai?tenderId=${tender.id}`)).json();expect(state.findings.fields).toHaveLength(1);
  const repeat=await ai(page.request,{action:"extract",documentId:document.id,pages:[1],chunkIndex:0});expect(repeat.cached).toBe(true);
- expect((await page.request.post("/api/ai",{data:{action:"apply",draftId:repeat.draft.id,reviewHash:"old",fields:[0],requirements:[]}})).status()).toBe(409);
+ expect((await page.request.post("/api/ai",{data:{action:"apply",draftId:repeat.draft.id,reviewHash:"old",fields:[0],requirements:[]}})).status()).toBe(400);
+ const second=await ai(page.request,{action:"attach",tenderId:tender.id,version:tender.currentVersion,document:{name:"Additional PDF fixture",pages:[{page:1,text:"Additional document: Installation services must include commissioning and operator training at the customer site."}]}});
+ await ai(page.request,{action:"extract",documentId:second.id,pages:[1],chunkIndex:0});
+ await ai(page.request,{action:"extract",documentId:document.id,pages:[1],chunkIndex:0});
+ const combined=await (await page.request.get(`/api/ai?tenderId=${tender.id}`)).json();expect(combined.findings.fields).toHaveLength(2);expect(combined.findings.requirements).toHaveLength(2);
+ const savedRequirements=(await (await page.request.get(`/api/data?mode=tender&id=${tender.id}`)).json()).requirements;expect(savedRequirements.filter((r:{origin:string;confirmed:boolean})=>r.origin==='ai-assisted'&&r.confirmed)).toHaveLength(2);
+ const coverage=(await (await page.request.get(`/api/workflow?mode=tender&id=${tender.id}`)).json()).coverage;expect(coverage.analyzed).toBe(2);expect(coverage.reviewed).toBe(0);
  const company={name:"AI test supplier",aiProfile:"Supply laboratory instrumentation and radio frequency measurement systems with installation and integration experience."};expect((await page.request.post("/api/data",{data:{action:"company",company}})).ok()).toBe(true);
- await page.getByRole("tab",{name:"eligibility",exact:true}).click();await page.getByRole("button",{name:"Review eligibility with AI"}).click();await expect(page.getByText("Test fixture evidence comparison")).toBeVisible();
- const eligibility=await (await page.request.get(`/api/ai?tenderId=${tender.id}`)).json();expect(eligibility.analysis.stale).toBe(false);expect(eligibility.analysis.items.find((r:{label:string})=>r.label.startsWith("Test fixture")).outcome).toBe("needs review");
- const req=eligibility.analysis.items.find((r:{label:string})=>r.label.startsWith("Test fixture"));
- await page.getByText("Record your evidence judgment",{exact:true}).last().click();await page.getByLabel("Evidence reference",{exact:true}).last().fill("Test project report page 1");await page.getByLabel("Reason for your judgment").last().fill("Test-only human review: inspect project completion certificate.");const judgmentSaved=page.waitForResponse(r=>r.url().endsWith("/api/workflow")&&r.request().postData()?.includes('"action":"judgment"')===true);await page.getByRole("button",{name:"Save human judgment"}).last().click();expect((await judgmentSaved).ok()).toBe(true);await expect(page.locator("p.info-box").filter({hasText:"Test-only human review:"})).toBeVisible();
+ await page.goto('/company');const supporting='Our dedicated service-support line is +91 0000000000, available Monday to Friday, 9am–6pm.';
+ await page.getByRole('textbox',{name:'Supporting information',exact:true}).fill(supporting);await page.getByRole('button',{name:'Save company profile',exact:true}).click();await expect(page.getByText('All changes saved',{exact:true})).toBeVisible();
+ await page.reload();await expect(page.getByRole('textbox',{name:'Supporting information',exact:true})).toHaveValue(supporting);await expect(page.getByRole('textbox',{name:'Company capabilities',exact:true})).toHaveValue(company.aiProfile);
+ await page.getByRole('textbox',{name:'Supporting information',exact:true}).scrollIntoViewIfNeeded();await page.screenshot({path:'.local/supporting-information-desktop.png',fullPage:true});
+ await page.setViewportSize({width:390,height:844});await page.reload();await expect(page.getByRole('textbox',{name:'Supporting information',exact:true})).toHaveValue(supporting);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);await page.screenshot({path:'.local/supporting-information-mobile.png',fullPage:true});await page.setViewportSize({width:1440,height:1000});
+ await page.goto(`/tenders/${tender.id}`);
+ await page.getByRole("tab",{name:"eligibility",exact:true}).click();await page.getByRole("button",{name:"Check eligibility"}).click();await expect(page.getByText("Test fixture evidence comparison").first()).toBeVisible();
+ const eligibility=await (await page.request.get(`/api/ai?tenderId=${tender.id}`)).json();expect(eligibility.analysis.stale).toBe(false);expect(eligibility.analysis.items.find((r:{label:string})=>r.label.startsWith("Test fixture")).outcome).toBe("appears satisfied");
+ await expect(page.locator('#review .badge').filter({hasText:'Appears met'})).toHaveCount(2);
+ const supportedWorkflow=await (await page.request.get(`/api/workflow?mode=tender&id=${tender.id}`)).json();expect(supportedWorkflow.rows.every((r:{issues:string[]})=>!r.issues.includes('Resolve the evidence review'))).toBe(true);
+ expect(eligibility.analysis.items[0].ai.evidenceIds).toContain('supporting-information');
+ const req=eligibility.analysis.items.filter((r:{label:string})=>r.label.startsWith("Test fixture")).at(-1);
+ await expect(page.locator('#review').getByText('Source:',{exact:false})).toHaveCount(0);
+ await page.screenshot({path:".local/eligibility-desktop.png",fullPage:true});await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);await page.screenshot({path:".local/eligibility-mobile.png",fullPage:true});await page.setViewportSize({width:1440,height:1000});
+ await page.getByText("Update assessment",{exact:true}).last().click();await page.getByLabel("Assessment note").last().fill("Test-only human review: inspect project completion certificate.");const judgmentSaved=page.waitForResponse(r=>r.url().endsWith("/api/workflow")&&r.request().postData()?.includes('"action":"judgment"')===true);await page.getByRole("button",{name:"Save assessment"}).last().click();expect((await judgmentSaved).ok()).toBe(true);await expect(page.getByText("Test-only human review: inspect project completion certificate.",{exact:true}).first()).toBeVisible();
  expect((await (await page.request.get(`/api/workflow?mode=tender&id=${tender.id}`)).json()).rows.find((r:{requirement:{id:string}})=>r.requirement.id===req.requirementId).judgment.stale).toBe(false);
  const after=await (await page.request.get(`/api/data?mode=tender&id=${tender.id}`)).json();expect(after.tender.currentVersion).toEqual(before.tender.currentVersion);
  await page.goto("/discover?recommended=true");await page.getByRole("button",{name:"Find tenders matching my profile",exact:true}).click();await expect(page.getByText("Matching complete. Relevance is separate from eligibility.")).toBeVisible();await expect(page.locator(".ai-match-card").first()).toBeVisible();

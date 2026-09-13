@@ -47,9 +47,10 @@ export async function POST(req:Request){try{
  if(action==='judgment'){
   const input=z.object({requirementId:identifier,outcome:z.enum(['supporting evidence','evidence gap','needs review']),note:z.string().min(10).max(2000),evidence:z.string().min(3).max(1000),evidenceIds:z.array(identifier).max(30).default([])}).parse(b);
   const row=w.rows.find(r=>r.requirement.id===input.requirementId);if(!row)throw new AiError('Requirement unavailable.',404);
+  if((b.requirementInputHash||b.inputHash)!==row.inputHash)throw new AiError('Information for this requirement changed. Reload before saving an assessment.',409);
   if(input.outcome==='supporting evidence'&&(row.rule.outcome==='not satisfied'||!row.requirement.confirmed))throw new AiError('Confirm the clause and correct failed local checks first.');
   if(input.evidenceIds.some(id=>!w.evidence.some(e=>e.id===id)))throw new AiError('Evidence unavailable.');
-  await db.collection('reviewJudgments').updateOne({ownerId:u.id,tenderId,requirementId:input.requirementId},{$set:{...input,ownerId:u.id,tenderId,inputHash:w.inputHash,recordedAt:now}},{upsert:true});return json({ok:true});
+  await db.collection('reviewJudgments').updateOne({ownerId:u.id,tenderId,requirementId:input.requirementId},{$set:{...input,ownerId:u.id,tenderId,inputHash:row.inputHash,recordedAt:now}},{upsert:true});return json({ok:true});
  }
  if(action==='task'){
   const row=w.rows.find(r=>r.requirement.id===b.requirementId);if(!row)throw new AiError('Requirement unavailable.',404);const bid=await createBid(w.tender,u.id);if(!bid)throw new AiError('Bid unavailable.');

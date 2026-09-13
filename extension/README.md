@@ -1,22 +1,30 @@
-# BidDesk attachment bridge (Firefox)
+# BidDesk attachment bridge for Chrome
 
-The core BidDesk app works without this extension. This optional local extension downloads a ZIP using your existing source portal session and transfers file bytes to your paired private workspace. No source portal cookie or access token is sent to BidDesk or written to extension storage.
+This optional Chrome extension downloads a tender ZIP using your existing TenderHut browser session and transfers its bytes to a paired local BidDesk workspace. TenderHut cookies and access tokens stay in the browser and are never written to extension storage or sent to BidDesk.
 
-## Local installation and use
+## Installation and use
 
-1. Start BidDesk with `npm run dev` and use `http://localhost:3000`.
-2. In Firefox open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select this directory's `manifest.json`. Temporary add-ons disappear when Firefox restarts.
-3. Sign in to source portal normally in a tab. Do not paste credentials into BidDesk or the extension.
-4. Open a source portal tender in BidDesk → **Documents** → **Pair attachment extension**. Copy the one-use pairing code (valid for ten minutes).
-5. Switch to the signed-in source portal tab. Open the extension, paste the code and choose **Check destination**. Check the tender, bid ID and local destination before choosing **Download ZIP and transfer**.
-6. On success, return to BidDesk and choose **Review transferred files**. Choose **Read PDF for review**, then select the document/pages and consent before running Gemini. Unsupported files can be downloaded but are not executed or analyzed.
+1. Start BidDesk and open its local address, such as `http://localhost:3000`.
+2. In **Documents & review → Transfer attachments from the source portal → Set up the Chrome extension**, download and extract the Chrome extension ZIP. Developers can use this repository's `extension` directory directly.
+3. Open `chrome://extensions` in Chrome 120 or newer, enable **Developer mode**, select **Load unpacked**, and choose the extracted folder containing `manifest.json`. Pin the extension using Chrome's Extensions menu. Keep the extracted folder in place; after replacing its files with an update, click **Reload** on the extension card.
+4. Sign in to `https://tenderhut.in` normally. In BidDesk, choose **Pair attachment extension** and copy the one-use code, valid for ten minutes.
+5. Switch to the signed-in TenderHut tab. Open the extension, paste the code, select **Check destination**, and check the tender, bid ID and local destination. Then choose **Download ZIP and transfer**. Keep the popup and TenderHut tab open until completion.
+6. Return to BidDesk, select **Review transferred files**, then **Read PDF for review**. Select the document/pages in **Documents & review**, and explicitly start analysis when ready. Other file formats are download-only.
 
-The pairing code authorizes one upload to one tender in your workspace. Treat it as private. Generate a fresh code after failure/expiry. Normal source refresh never downloads attachments or runs AI. The extension uses fixed source portal routes, not an arbitrary URL relay.
+The code authorizes one transfer to one tender/account/version. Generate a fresh code after failure or expiry. If the popup closes during a transfer, first check BidDesk's transferred files before retrying. Source refresh does not download attachments or start AI.
 
-ZIPs: 25 MB compressed, 100 entries, 100 MB total expanded, 20 MB per entry. No nested extraction, encrypted archives or symlinks. Temporary extracted files expire after 24 hours and are removed on a subsequent attachment operation. Extracted PDF text is retained privately for review. Atlas does not store PDF binaries.
+## Limits and storage
 
-## Verification limits
+This is an unpacked Chrome extension, not a Chrome Web Store listing. Transfers remain local-only (`http://localhost` or `http://127.0.0.1`); hosted destinations are rejected.
 
-Public source paths and the local pairing/ZIP/PDF flow are tested independently. Authenticated downloading in your actual Firefox/source portal session still requires a manual smoke check; captured tokens are never replayed. If session-bound fetch fails or the source denies access, download normally and upload a selected PDF through BidDesk's Analysis tab. No paid entitlement is assumed. Chrome packaging and hosted deployment are not included.
+ZIP limits: 25 MB compressed, 100 entries, 100 MB expanded total and 20 MB per entry. Encrypted archives, symlinks and nested extraction are rejected. Temporary archives expire after 24 hours and are removed during subsequent attachment operations. PDFs selected for review are retained separately in private document storage; MongoDB stores metadata/text, not the PDF binaries.
 
-The implementation uses Firefox content-script execution with the existing page session. References: [MDN content scripts](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Content_scripts), [MDN scripting.executeScript](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/scripting/executeScript). Only downloaded bytes leave that execution context; the local transfer is performed by the extension background script with a separate BidDesk grant.
+To rebuild the downloadable package after editing this directory, run `python3 scripts/package-extension.py` from the repository root.
+
+## Implementation and verification
+
+Manifest V3 uses a Chrome service worker and `chrome.*` APIs. A callback response channel stays open for asynchronous transfers. Download code runs in an isolated content-script world on the TenderHut tab; only file bytes return to the worker. The worker contacts BidDesk with a separate one-use grant and no browser credentials. A bounded transfer keeps the worker active while running; it does not schedule background downloads.
+
+Automated tests use an isolated browser profile, source responses and local workspace data. Real authenticated TenderHut access/entitlement still needs a manual smoke check. If TenderHut denies the download, download normally and upload a selected PDF in BidDesk.
+
+References: [Chrome service workers](https://developer.chrome.com/docs/extensions/develop/migrate/to-service-workers), [Chrome messaging](https://developer.chrome.com/docs/extensions/develop/concepts/messaging), [Load unpacked extensions](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world).

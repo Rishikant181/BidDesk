@@ -1,4 +1,5 @@
 import {describe,it,expect} from 'vitest';
+import {eligibilitySummary} from '../../src/lib/eligibility-summary';
 import {calculateReadiness} from '../../src/lib/readiness';
 import {companySchema,requirementSchema,tenderSchema,type Tender} from '../../src/lib/schemas';
 import {evidenceSchema,preferencesSchema,type Evidence} from '../../src/lib/workflow-schema';
@@ -29,4 +30,36 @@ describe('matching preferences',()=>{
 it('improves top-one selection over the old keyword baseline on a fixed labeled fixture set',()=>{
  const cases=[{profile:'laboratory instruments measurement',relevant:{title:'Lab testing devices',description:'Precision equipment'},noise:{title:'Office furniture',description:'Furniture for a laboratory'}},{profile:'construction building',relevant:{title:'Building refurbishment',description:'Repair public facilities'},noise:{title:'IT documentation',description:'Documentation mentioning construction and building'}},{profile:'solar photovoltaic',relevant:{title:'Photovoltaic panels',description:'Supply panels'},noise:{title:'Office staffing',description:'Staffing for solar photovoltaic offices'}}];
  let oldCorrect=0,newCorrect=0;for(const sample of cases){const company=companySchema.parse({aiProfile:sample.profile}),items=[{...t,...sample.noise,label:false},{...t,...sample.relevant,label:true}],terms=sample.profile.split(' '),baseline=(item:Tender)=>terms.filter(term=>`${item.title} ${item.description}`.toLowerCase().includes(term)).length;oldCorrect+=Number([...items].sort((a,b)=>baseline(b)-baseline(a))[0].label);newCorrect+=Number([...items].sort((a,b)=>relevance(b,company,preferencesSchema.parse({}))!.score-relevance(a,company,preferencesSchema.parse({}))!.score)[0].label);}expect(newCorrect).toBe(cases.length);expect(newCorrect).toBeGreaterThan(oldCorrect);
+});
+
+it('analyzed pages need no approval, while missing evidence still blocks readiness',()=>{
+ const result=calculateReadiness(t,[{...r,evidenceIds:['e']}],c,[financial],[],{total:1,analyzed:1,reviewed:0});expect(result.status).toBe('Ready for final review');expect(eligibilitySummary(result.rows[0]).status).toBe('Appears met');
+ const failed=calculateReadiness(t,[{...r,evidenceIds:['e']}],c,[{...financial,amount:99}],[],{total:1,analyzed:1,reviewed:0}).rows[0];
+ expect(eligibilitySummary({...failed,ai:{suggestion:'supporting evidence',evidenceIds:['capabilities'],explanation:'Looks suitable',nextAction:'',stale:false}}).status).toBe('Not met');
+ const missing=calculateReadiness(t,[{...r,evidenceIds:['missing']}],c,[],[],coverage).rows[0];expect(eligibilitySummary(missing).status).toBe('Needs information');
+ expect(eligibilitySummary({...result.rows[0],ai:{suggestion:'supporting evidence',evidenceIds:['capabilities'],explanation:'Old result',nextAction:'',stale:true}}).status).toBe('Needs information');
+});
+
+describe('automatic qualitative eligibility',()=>{
+ const phone=requirementSchema.parse({id:'phone',label:'Your dedicated support line',type:'manual',complex:true,confirmed:true,clause:'Support line',importance:'unknown'});
+ const support={requirementId:phone.id,suggestion:'supporting evidence' as const,evidenceIds:['capabilities'],explanation:'Your dedicated support line is recorded in your company profile.',nextAction:'Include your support number in your bid.',stale:false};
+ const evaluate=(requirement=phone,assessment=support,evidence:Evidence[]=[])=>calculateReadiness(t,[requirement],c,evidence,[],coverage,undefined,undefined,[assessment]);
+ it('resolves a supported support-line requirement without manual approval and retains the bid reminder',()=>{
+  const result=evaluate();expect(result.rows[0].issues).toEqual([]);expect(result.status).toBe('Ready for final review');expect(result.rows[0].judgment).toBeUndefined();expect(eligibilitySummary(result.rows[0])).toMatchObject({status:'Appears met',nextAction:support.nextAction});
+ });
+ it('does not resolve stale, unsupported, or unconfirmed information',()=>{
+  for(const row of [evaluate(phone,{...support,stale:true}),evaluate(phone,{...support,evidenceIds:[]}),evaluate({...phone,confirmed:false})])expect(eligibilitySummary(row.rows[0]).status).toBe('Needs information');
+ });
+ it('keeps missing and expired linked evidence unresolved despite a supporting explanation',()=>{
+  expect(eligibilitySummary(evaluate({...phone,evidenceIds:['missing']}).rows[0]).status).toBe('Needs information');
+  expect(eligibilitySummary(evaluate({...phone,evidenceIds:['e']},support,[{...financial,expiresAt:'2020-01-01'}]).rows[0]).status).toBe('Needs information');
+ });
+ it('does not replace structured financial or certification evidence with capability text',()=>{
+  for(const type of ['turnover','certification'] as const)expect(eligibilitySummary(evaluate({...phone,type,complex:false}).rows[0]).status).toBe('Needs information');
+ });
+ it('keeps a current recorded gap but allows a fresh check to replace a stale assessment',()=>{
+  const judgment={requirementId:phone.id,outcome:'evidence gap' as const,note:'The support line was unavailable.',evidence:'Company statement',evidenceIds:[],inputHash:'old',recordedAt:'2026-01-01'};
+  const current=calculateReadiness(t,[phone],c,[],[judgment],coverage,undefined,undefined,[support]);expect(eligibilitySummary(current.rows[0]).status).toBe('Not met');
+  const refreshed=calculateReadiness(t,[phone],c,[],[{...judgment,stale:true}],coverage,undefined,undefined,[support]);expect(eligibilitySummary(refreshed.rows[0]).status).toBe('Appears met');
+ });
 });

@@ -67,3 +67,25 @@ describe("source fact comparison",()=>{
   for(const value of ["NOTICE-124","OTHER-123"])expect(compareFindings(t,[{key:"reference",value,citations:[citation]}]).conflicts).toHaveLength(1);
  });
 });
+
+it('flags conflicting document values when the listing has no value',async()=>{
+ const {compareFindings}=await import('../../src/lib/ai/conflicts'),{tenderSchema}=await import('../../src/lib/schemas');
+ const t={...tenderSchema.parse({title:'Test tender',reference:'TEST'}),id:'th-1',currentVersion:'v1',createdAt:'',updatedAt:'',checkedAt:''};
+ expect(compareFindings(t,[{key:'value',value:'100',citations:[]},{key:'value',value:'200',citations:[]}]).conflicts).toContain('value: supplied documents contain different values');
+});
+
+it('requires grounded company evidence to resolve a qualitative requirement',()=>{
+ const company=companySchema.parse({aiProfile:'We have a dedicated support line.'}),manual={...requirement,type:'manual' as const,complex:true};
+ expect(mergeEligibility(manual,company,'',suggestion,[doc]).outcome).toBe('appears satisfied');
+ for(const change of [{evidenceIds:[]},{evidenceIds:['unknown']},{suggestion:'needs review' as const},{citations:[]}])expect(mergeEligibility(manual,company,'',{...suggestion,...change},[doc]).outcome).toBe('needs review');
+});
+
+it('shares supporting information for eligibility separately from matching capabilities',async()=>{
+ const {profileText,profileHash}=await import('../../src/lib/tenderhut/matching');
+ const base=companySchema.parse({aiProfile:'Laboratory instrument installation',experience:'Private internal notes'});
+ const company={...base,supportingInformation:'Dedicated support line: +91 0000000000.'};
+ expect(evidenceFor(company)).toEqual([{id:'capabilities',text:base.aiProfile},{id:'supporting-information',text:company.supportingInformation}]);
+ expect(evidenceFor(companySchema.parse({supportingInformation:company.supportingInformation}))).toHaveLength(1);
+ expect(profileText(company)).toBe(profileText(base));expect(profileHash(company)).toBe(profileHash(base));
+ expect(companySchema.safeParse({...company,supportingInformation:'x'.repeat(6001)}).success).toBe(false);
+});

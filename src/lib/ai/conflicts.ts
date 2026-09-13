@@ -4,6 +4,10 @@ import {normalize} from "./grounding";
 
 export function compareFindings(t:Tender,fields:Extraction["fields"]){
  const conflicts:string[]=[],comparisonNotes:string[]=[];
+ for(const key of ["reference","closesAt","value","emd","fee","currency"]){
+  const values=fields.filter(f=>f.key===key).map(f=>normalize(f.value));
+  if(new Set(values).size>1)conflicts.push(`${key}: supplied documents contain different values`);
+ }
  for(const f of fields){
   if(!["reference","closesAt","value","emd","fee","currency"].includes(f.key))continue;
   const original=t[f.key];if(original==null||String(original)==="")continue;
@@ -20,7 +24,7 @@ export function compareFindings(t:Tender,fields:Extraction["fields"]){
  }
  return {conflicts,comparisonNotes};
 }
-export type SavedFindings={ownerId:string;tenderId:string;version:string;draftId:string;fields:Extraction["fields"];conflicts:string[];comparisonNotes?:string[];documentHashes:string[];updatedAt:string};
+export type SavedFindings={ownerId:string;tenderId:string;version:string;draftId:string;fields:Extraction["fields"];requirements?:Extraction["requirements"];conflicts:string[];comparisonNotes?:string[];documentHashes:string[];updatedAt:string};
 export function reconcileFindings<T extends SavedFindings>(t:Tender,findings:T|null){
  if(!findings||findings.version!==t.currentVersion||!Array.isArray(findings.fields))return findings;
  return {...findings,...compareFindings(t,findings.fields as Extraction["fields"])};

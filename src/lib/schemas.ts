@@ -44,6 +44,7 @@ export const companySchema = z.object({
   turnoverPeriod: z.string().max(100).default(""), turnoverEvidence: z.string().max(500).default(""),
   experience: z.string().max(5000).default(""),
   aiProfile: z.string().max(6000).default(""),
+  supportingInformation: z.string().max(6000).default(""),
   projects: z.array(z.object({id:z.string().min(1).max(100),title:z.string().max(200),scope:z.string().max(2000),completedAt:dateValue,evidence:z.string().max(500),shareWithAI:z.boolean().default(false)})).max(20).default([]),
   certifications: z.array(z.object({ name: z.string().max(100), expiresAt: dateValue, evidence: z.string().max(500) })).max(50).default([]),
 });

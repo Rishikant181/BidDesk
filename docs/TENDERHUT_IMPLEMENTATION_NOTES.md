@@ -11,7 +11,7 @@ TenderHut is the sole tender source. This is an undeployed prototype with fresh 
 - Catalogue records have no private-owner variant or legacy identity field. Transactional versions retain source changes and reopen linked preparation tasks; private reviews become unconfirmed on a new version. Unchanged retrieval does not create another version.
 - Company profile matching performs at most three searches, retrieves up to 150 metadata candidates and selects up to 30 by local profile-keyword relevance. It displays ten tender cards immediately with spinners in the explanation sections, then generates explanations for that loaded batch only. Scrolling fetches the next ten cards independently of earlier explanation requests. There is no whole-shortlist embedding/ranking pass. Failures preserve cards and allow explanation retry; successful model work is cached. Matching preferences and per-user relevance feedback now affect weighted metadata ranking; private PDF findings are not candidate sources.
 - Tender PDFs may be uploaded only onto an existing tender; reusable company evidence and submission acknowledgments have a separate private file library. Upload text and AI findings remain private. Source citations use the canonical analysis document ID and page ordinal; no direct alternate-portal PDF fetching is offered.
-- Firefox extension pairing and selected ZIP/PDF extraction remain. The app never receives upstream login credentials. The real signed-in Firefox download needs manual verification.
+- Chrome extension pairing and selected ZIP/PDF extraction remain. The app never receives upstream login credentials. The real signed-in Chrome download needs manual verification.
 
 ## Code map
 

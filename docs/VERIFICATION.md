@@ -1,5 +1,13 @@
 # Verification — cards before explanations
 
+## Bid-only requirement information — 13 September 2026
+
+Verification: typecheck, lint, all 80 unit tests and the final production build pass. Nine affected browser journeys passed across the initial regression run and final targeted run. Coverage includes single-requirement provider calls, unchanged company/other requirement results and assessments, PDF save/reload/access, full-check reuse of scoped evidence, quota-failure persistence and inline retry, concurrent edit rejection, unreadable-PDF recovery, bid-only financial thresholds and proof removal. Desktop/mobile forms were visually inspected and mobile overflow checked. Tests use isolated databases and deterministic source/AI fixtures; no live model quality or deployment claim is made.
+
+## Automatic findings and simplified eligibility — 13 September 2026
+
+Verification: typecheck, lint, all 69 unit tests and production build pass. All eight affected production browser journeys pass after correcting the new Analyze PDF button to use the API’s readable-page metadata. The other five browser journeys passed in the preceding full-suite run, including the packaged Chrome extension. Tests cover automatic persistence without apply, two-document aggregation, deduplication on retry, reloads, account isolation, eligibility without source UI, failed numeric checks, interrupted long-document analysis, OCR and existing preparation workflows. Desktop findings and mobile eligibility layouts were visually inspected; the mobile test also checks horizontal overflow. Browser tests use an isolated database and deterministic source/AI fixtures; no live AI quality claim or deployment is implied. Private configuration is unchanged.
+
 - TypeScript, ESLint, 50 unit tests, production build and all seven browser journeys pass (browser suite: 1.6 minutes).
 - A held explanation request proves ten cards and ten spinners render before generation. Initial matching makes no embedding requests; the API rejects explanations for unloaded pages.
 - Pagination verifies 10 → 20 → 25 visible cards, pending/error states, cached explanation retry after a partial model failure, duplicate suppression, owner isolation, reload persistence and region staleness.
@@ -68,3 +76,7 @@ Added coverage verifies readiness with unknown coverage/optional gaps, multiple-
 All source and AI responses were fixtures. OCR ran locally using bundled English language data. Reminder email composition wrote only to the local sink. Each browser run used a fresh random test database; final teardown removed that database and its scoped retained-PDF/mail directories. New test accounts use reserved test IPs so the suite does not collide with signup rate limits; application rate limits are unchanged.
 
 The configured workspace database and private configuration were not changed. No real email, live source/AI call, hosted deployment, commit or push was performed. Real SMTP transport, arbitrary/rotated/handwritten scan accuracy, and the user's signed-in Firefox upstream download are not established by these checks. See FEATURE_WORKFLOWS.md for worker and storage setup.
+
+## Chrome extension conversion — 13 September 2026
+
+Typecheck, lint, 67 unit tests and production build pass. The existing TenderHut attachment journey passes, and `tests/e2e/chrome-extension.spec.ts` loads the actual downloadable package in a persistent Chromium context. It verifies Chrome setup UI, popup validation, service-worker messaging, browser-cookie fixture refresh, bearer-authenticated fixture ZIP download, transfer to the real isolated app endpoint and consumed-code rejection. No real TenderHut session was used. Unit tests also compare the ZIP contents with the source files to prevent distributing stale extension code.

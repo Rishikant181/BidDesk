@@ -22,8 +22,8 @@ Configuration uses `MONGODB_URI`, `MONGODB_DB`, `BETTER_AUTH_SECRET` and `BETTER
 - Discover current notices by keyword, region, category, organisation, originating portal, buyer, procurement type, value and deadline. Save opportunities, preview, compare up to four and export the displayed page.
 - Browse retained provider records and saved opportunities. Open a tender to recheck source details; optional scheduled monitoring runs through a separate worker.
 - Maintain company capabilities, financial/certification evidence and selected project references.
-- Attach a PDF to an existing tender, extract text and review AI suggestions with exact page citations. Private findings do not overwrite published source facts.
-- Optionally transfer a tender's attachments through the [Firefox extension](extension/README.md), using your browser's authenticated source session. Credentials stay in the browser.
+- Attach a PDF to an existing tender, run PDF analysis and immediately see automatically saved private findings. Private findings do not overwrite published source facts.
+- Optionally transfer a tender's attachments through the [Chrome extension](extension/README.md), using your browser's authenticated source session. Credentials stay in the browser.
 - Review unified eligibility evidence, record human judgments without AI, and turn gaps into linked preparation tasks. Track readiness and decision/submission records.
 - Track deadlines, source changes and reminders, export calendar events, and configure optional email delivery.
 - Start profile matching to see 10 tender cards immediately, with spinners while their AI explanations load. Scroll for the next ten cards and their explanations.
@@ -32,11 +32,11 @@ There is no standalone tender import, spreadsheet ingestion, manual amendment im
 
 ## Documents and AI
 
-In a tender, open **Documents & review → Upload a PDF**, or expand **Transfer attachments from the source portal**. PDFs and extracted text are retained privately; analyze selected ranges or remaining readable pages. Only capability text and selected projects are shared for AI review; financial checks remain local. Use public or non-sensitive inputs with the configured free-tier demo.
+In a tender, open **Documents & review → Upload a PDF**, or expand **Transfer attachments from the source portal**. PDFs and extracted text are retained privately; click Analyze PDF for all readable pages, or use Document options for selected ranges, OCR and remaining pages. Capability text, supporting information and selected projects are shared for AI eligibility review; financial checks remain local. Company profile has a separate Supporting information input for contacts, service arrangements and declarations. Matching uses capabilities and selected projects. Eligibility also accepts bid-only details and readable PDF evidence directly on a requirement, with Save & recheck this requirement; these additions do not change your profile or other results. Use public or non-sensitive inputs with the configured free-tier demo.
 
 PDF limits: 20 MB, 250 pages, 25,000 characters/page and 700,000 characters/document. Analysis accepts up to 30 pages and 120,000 characters per run. Explicit local English OCR is available for selected scanned pages; Word conversion is not supported. PDFs extract in a bounded server worker. Original PDFs are retained privately for citation viewing.
 
-ZIP limits: 25 MB compressed, 100 entries, 100 MB expanded total and 20 MB/file. Transferred files expire after 24 hours; extracted text remains private. Other file formats are download-only. The real signed-in Firefox upstream download still requires a manual smoke check.
+ZIP limits: 25 MB compressed, 100 entries, 100 MB expanded total and 20 MB/file. Transferred files expire after 24 hours; extracted text remains private. Other file formats are download-only. The real signed-in Chrome upstream download still requires a manual smoke check.
 
 ## Verify
 
