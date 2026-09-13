@@ -16,7 +16,7 @@ const navigation=[{href:"overview",label:"Overview",icon:LayoutDashboard},{href:
 export function Application({path}:{path:string[]}) {
   const router=useRouter(),small=useMobileLayout();
   const [data,setData]=useState<Workspace|null>(null),[error,setError]=useState(""),[toast,setToast]=useState<{text:string;error?:boolean}|null>(null),[alerts,setAlerts]=useState(false),[mobile,setMobile]=useState(false);
-  const refresh=useCallback(async()=>{const next=await read<Workspace>();setData(next);setError("");},[]);
+  const refresh=useCallback(async()=>{const next=await read<Workspace>();setData(next);setError("");window.dispatchEvent(new Event("workflow-change"));},[]);
   const notify=useCallback((text:string,error=false)=>setToast({text,error}),[]);
   useEffect(()=>{read<Workspace>().then(setData).catch(e=>setError(e.message));},[]);
   useEffect(()=>{if(toast){const timer=setTimeout(()=>setToast(null),6000);return()=>clearTimeout(timer);}},[toast]);

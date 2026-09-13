@@ -6,6 +6,45 @@
 
 Read [TENDERHUT_IMPLEMENTATION_NOTES.md](TENDERHUT_IMPLEMENTATION_NOTES.md) for the current code map and limits and [UI_FUNCTIONALITY_AUDIT.md](UI_FUNCTIONALITY_AUDIT.md) for the earlier audit and current disposition.
 
+## Saved searches inside discovery filters — 13 September 2026
+
+Moved Saved searches into the search card, after the filters and applied-filter chips. It remains a collapsed disclosure with a top divider, without its own card border or padding. All tenders / Saved stays above the combined search card. Existing responsive field/button and saved-search row spacing is preserved.
+
+Verification: typecheck, lint and production build pass. A temporary isolated production browser check confirmed placement inside the card, collapsed initial state, saving/restoring a keyword search, and no horizontal page overflow at 1440px and 390px. Both rendered layouts were visually inspected; temporary inspection code was removed. Private configuration was preserved.
+
+## Application spacing review — 13 September 2026
+
+Fixed Monitoring & reminders and audited desktop/mobile spacing across discovery, matching, company/project/evidence forms, tender overview/requirements/documents, page coverage/OCR, citations, human judgments, bid tasks/readiness/decision records, calendar, comparison and account screens. Monitoring now groups its checkboxes, limits the reminder-day field width, separates calendar export with a divider and leaves space before the calendar. Evidence entry no longer nests extra panel padding. Mobile form headings and actions stack without crowding. Mobile authentication uses a content-sized brand row rather than stretching empty header space.
+
+New form content uses the shared `.form-flow` layout (16px between content blocks, 12px for compact groups). Place it **inside** native `details` with `.disclosure-body`; do not turn `details` itself into a flex/grid container. Use `.section-spacing` for standalone panels and `.section-divider` for grouped subsections. These containers reset inherited child margins, including the older checkbox-label rule, so gaps do not accumulate. Grid fields have no added label top margin. Preserve dialog auto margins. Reuse this layout for future forms instead of mixing per-label margins with unspaced buttons and paragraphs. Saved searches retains its existing scoped responsive layout.
+
+Verification: typecheck, lint and production build pass. All 12 existing production browser journeys passed during the review; the seven affected AI/UI/workflow journeys passed again after form/citation refinements. A temporary isolated browser audit saved reminder preferences and inspected expanded forms at 1440px and 390px, including loaded readiness/comparison, original-page viewing covered by the existing workflow journey, and sign-in/sign-up. Screenshots were visually inspected; temporary inspection code was removed after completion. The final production build and visual audit also pass after the mobile authentication correction. Tests used isolated data and source/AI fixtures. Private configuration and live-service data were preserved.
+
+## Saved-search spacing and overview cleanup — 13 September 2026
+
+Saved searches now uses scoped CSS with explicit disclosure/content spacing, an aligned name field and save button on desktop, stacked controls on mobile, separated saved-search rows and a 20px gap before the collection tabs. Removed the Overview “Next actions” card at the user's request. The overview only reserves its readiness sidebar when active bids exist, so an empty sidebar no longer wastes space.
+
+Verification: typecheck, lint and production build pass. A temporary isolated production browser check saved a search, checked desktop/mobile overflow and confirmed the card is absent on the loaded `/overview` route; desktop/mobile screenshots were visually inspected. The temporary check was removed after verification. Build/server checks required execution outside the sandbox; no private configuration or live service data was changed.
+
+## First-deployment acceptance plan — 13 September 2026
+
+Added [PREDEPLOYMENT_CHECKLIST.md](PREDEPLOYMENT_CHECKLIST.md), covering user journeys, live integrations, account isolation, conservative readiness, hosted persistence and recovery. This is an unexecuted manual acceptance plan, not new verification. Code review confirmed that extension pairing and the Firefox extension both reject hosted destinations; monitoring requires a separate worker, private original PDFs require persistent filesystem storage, and password recovery is not configured. No configuration, application behavior, live service or deployment was changed for this documentation task.
+
+## Integrated feature improvement — 13 September 2026
+
+Implemented all six phases in FEATURE_IMPROVEMENT_PLAN.md as one iteration. See [FEATURE_WORKFLOWS.md](FEATURE_WORKFLOWS.md) for the delivered behavior, setup, data limits and operational boundaries.
+
+- Shared readiness and unified requirement review now connect source-backed requirements, local checks, AI explanations, independent human judgments, optional/mandatory applicability, evidence gaps, task creation and source/document staleness. Bid cards, comparison and active-bid overview use the same calculation. Empty coverage never implies readiness; completing a task does not resolve an evidence gap.
+- PDFs are retained privately with authenticated access and citation page viewing. A durable page ledger separates readable text, completed analysis and human review. Remaining-page analysis respects existing request limits and resumes completed work. Draft document hashes prevent applying results after OCR/document changes. Old drafts without hashes need fresh analysis; there is no compatibility migration.
+- Local English OCR uses a bounded subprocess and bundled language data. The private evidence library supports attachments, dates, multiple financial periods and stable requirement links. Missing/expired/replaced evidence invalidates dependent conclusions. Financial attachment contents are not sent to AI.
+- Matching adds explicit preferences, conservative unknown metadata handling, weighted terms/synonyms and relevant/not-relevant feedback while keeping ten-card progressive results. Saved searches restore named discovery filters. Closed candidates are excluded; synthetic matching fixtures use future dates so the tests do not expire.
+- Calendar exports retain date precision and stable event IDs. An optional worker shares hourly TenderHut checks across watchers, backs off on failure, persists reminders/outbox status, cancels obsolete queued reminders and deduplicates deliveries. The local mail sink is default; real SMTP needs explicit configuration. An uncertain SMTP handoff is not retried automatically.
+- Structured decisions retain reasons, gaps, effort estimates, snapshots and history. Submission acknowledgments and manual outcome records remain private and update personal pipeline stages. Checklist and decision edits are kept separately so saving one does not discard the other.
+
+The old AI-dependent human-judgment UI/API/store flow was removed in favor of independent workflow judgments; no data migration or workspace data deletion was performed. Private configuration was preserved. New dependencies are local OCR/rendering/language data and SMTP composition support. No worker was started against the configured workspace database, and no live source/AI call, real email, commit, push or deployment was performed.
+
+Verification: TypeScript, ESLint, 66 unit tests, production build and all 12 production browser journeys pass. New journeys cover private PDF isolation/viewing/deletion, local OCR (including a raster-only table/number fixture), evidence replacement and stale decisions, numeric-failure protection, idempotent task creation/reopening, saved searches, checklist/decision edit preservation, 35-page interrupted analysis and resume, calendar export, and repeated worker runs with a local mail sink. Tests use a fresh isolated database, source/model fixtures, and database-scoped file cleanup. Three labeled synthetic ranking cases compare the weighted implementation with the prior keyword baseline; this does not establish live ranking precision. No live SMTP, provider, AI or authenticated Firefox source-download verification was performed.
+
 ## UI/UX revision — 12 September 2026
 
 Implemented the approved audit plan, including the typography feedback. The workspace now uses 16px body/input text, 14px labels/metadata/actions, 18–20px opportunity titles, and 12px only for minor shell captions. Shared typography tokens, larger controls, stronger muted-text contrast, focus styles and reduced-motion support replace the previous microtype.

@@ -1,4 +1,5 @@
 "use client";
+import {MatchFeedback,MatchingPreferences} from './workflow';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {LoaderCircle} from 'lucide-react';
@@ -66,8 +67,8 @@ export function AIMatching(){
   },0);
   return()=>{window.clearTimeout(timer);mounted.current=false;controller.abort();};
  },[apply,canMatch,execute]);
- return <section className="panel form-panel ai-panel mt">
-  <div className="matching-toolbar row between wrap">
+ return <section className="panel form-panel ai-panel form-flow matching-layout mt">
+  <MatchingPreferences/><div className="matching-toolbar row between wrap">
    {run&&<span className="muted">{run.shown} tenders</span>}
    {canMatch&&<button className="button secondary small" disabled={busy||loading} onClick={()=>void execute()}>{run?'Search again':'Find tenders matching my profile'}</button>}
   </div>
@@ -81,11 +82,11 @@ export function AIMatching(){
    {!run.total&&<p>No opportunities returned. Refine the offerings in your profile or use keyword discovery.</p>}
    {run.items.map((t,i)=><article className="ai-match-card" key={t.id}>
     <small>#{t.rank} · {t.quality}</small><h3><Link href={`/tenders/${t.id}`}>{t.title}</Link></h3>
-    <div className="match-explanation" aria-label="AI explanation">
-     {t.explanation?<><p><strong>Why it matches:</strong> {t.explanation.reason}</p><p><strong>Still to check:</strong> {t.explanation.gap}</p><details><summary>Notice excerpt</summary><blockquote>{t.explanation.quote}</blockquote></details></>:run.stale?<p>Start a new search to generate this explanation.</p>:explanationErrors[Math.floor(i/10)*10]?<p>Explanation could not be loaded. Retry below.</p>:<p role="status" className="row"><LoaderCircle className="spin" size={18} aria-hidden="true"/>Generating AI explanation…</p>}
+    <MatchFeedback tenderId={t.id}/><div className="match-explanation" aria-label="AI explanation">
+     {t.explanation?<><p><strong>Why it matches:</strong> {t.explanation.reason}</p><p><strong>Still to check:</strong> {t.explanation.gap}</p><details><summary>Notice excerpt</summary><div className="form-flow disclosure-body"><blockquote>{t.explanation.quote}</blockquote></div></details></>:run.stale?<p>Start a new search to generate this explanation.</p>:explanationErrors[Math.floor(i/10)*10]?<p>Explanation could not be loaded. Retry below.</p>:<p role="status" className="row"><LoaderCircle className="spin" size={18} aria-hidden="true"/>Generating AI explanation…</p>}
     </div>
    </article>)}
-   {Object.entries(explanationErrors).map(([offset,message])=><div key={offset} className="mt"><p role="alert" className="error">{message}</p><button className="button secondary" disabled={run.stale} onClick={()=>setExplanationErrors(errors=>{const next={...errors};delete next[Number(offset)];return next;})}>Retry explanations for results {Number(offset)+1}–{Math.min(Number(offset)+10,run.shown)}</button></div>)}
+   {Object.entries(explanationErrors).map(([offset,message])=><div key={offset} className="form-flow mt"><p role="alert" className="error">{message}</p><button className="button secondary" disabled={run.stale} onClick={()=>setExplanationErrors(errors=>{const next={...errors};delete next[Number(offset)];return next;})}>Retry explanations for results {Number(offset)+1}–{Math.min(Number(offset)+10,run.shown)}</button></div>)}
    {run.hasMore&&!run.stale&&<div ref={sentinel} className="mt" data-testid="matching-next-page">
     {busy?<p role="status" className="row"><LoaderCircle className="spin" size={18} aria-hidden="true"/>Loading the next 10 tenders…</p>:<button className="button secondary" onClick={()=>void loadNext()}>{error?'Retry next batch':'Load next 10 matches'}</button>}
    </div>}

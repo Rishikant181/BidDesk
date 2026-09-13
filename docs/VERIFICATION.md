@@ -58,3 +58,13 @@ The obsolete committed source snapshot artifacts and local catalogue review/rech
 ## Limits
 
 No new live-provider or paid-model quality smoke check was needed for these removals. Tests use deterministic fixtures and do not establish live provider uptime. The real signed-in Firefox upstream attachment download still requires a manual check. No deployment, commit or push was performed. Other conditional issues in the earlier UI audit remain follow-up work unless marked resolved there.
+
+## Integrated feature improvements — 13 September 2026
+
+Final checks: `npm run typecheck`, `npm run lint`, all **66 unit tests**, `npm run build`, and `BIDDESK_E2E_PRODUCTION=1 npm run test:e2e` pass. The final production browser run passed **12/12 journeys in 2.6 minutes**.
+
+Added coverage verifies readiness with unknown coverage/optional gaps, multiple-period financial evidence, missing/expired/stale evidence, task deduplication and reopening, private file authorization/deletion, PDF citation rendering, local OCR on text-rendered and raster-only table/number samples, saved search restoration, independent human judgments, stale decision snapshots, record/checklist edit preservation, 35-page analysis interruption/resume, calendar date precision, and reminder/sink deduplication/cancellation. Matching retains progressive ten-card behavior and passes a small labeled synthetic comparison against the prior keyword baseline.
+
+All source and AI responses were fixtures. OCR ran locally using bundled English language data. Reminder email composition wrote only to the local sink. Each browser run used a fresh random test database; final teardown removed that database and its scoped retained-PDF/mail directories. New test accounts use reserved test IPs so the suite does not collide with signup rate limits; application rate limits are unchanged.
+
+The configured workspace database and private configuration were not changed. No real email, live source/AI call, hosted deployment, commit or push was performed. Real SMTP transport, arbitrary/rotated/handwritten scan accuracy, and the user's signed-in Firefox upstream download are not established by these checks. See FEATURE_WORKFLOWS.md for worker and storage setup.

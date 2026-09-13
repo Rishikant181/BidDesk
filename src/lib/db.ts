@@ -15,6 +15,12 @@ export async function getDb() {
 export async function ensureIndexes() {
   const db = await getDb();
   await Promise.all([
+    ...["matchingPreferences","watches"].map(name=>db.collection(name).createIndex({ownerId:1},{unique:true})),
+    ...["privateFiles","evidence","savedSearches","deliveryOutbox"].map(name=>db.collection(name).createIndex({id:1},{unique:true})),
+    db.collection("pageCoverage").createIndex({ownerId:1,documentId:1,page:1,hash:1,config:1},{unique:true}),
+    db.collection("reviewJudgments").createIndex({ownerId:1,tenderId:1,requirementId:1},{unique:true}),
+    db.collection("matchFeedback").createIndex({ownerId:1,tenderId:1},{unique:true}),
+    db.collection("bidRecords").createIndex({ownerId:1,tenderId:1},{unique:true}),
     db.collection("tenders").createIndex({id:1},{unique:true}),
     db.collection("tenders").createIndex({title:"text",description:"text",reference:"text",authority:"text"}),
     db.collection("tenders").createIndex({closesAt:1,state:1,category:1}),

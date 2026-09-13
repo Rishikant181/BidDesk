@@ -18,6 +18,7 @@ export const requirementSchema = z.object({
   threshold: money, value: z.string().max(300).default(""), period: z.string().max(100).default(""),
   clause: z.string().max(500).default(""), page: z.number().int().positive().nullable().default(null),
   confirmed: z.boolean().default(false),
+  importance: z.enum(["unknown","mandatory","optional","not applicable"]).optional(), evidenceIds: z.array(z.string().max(100)).max(30).optional(),
   citations: z.array(citationSchema).max(8).optional(), origin: z.enum(["manual","ai-assisted"]).optional(), complex: z.boolean().optional(),
 });
 export type Requirement = z.infer<typeof requirementSchema>;

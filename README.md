@@ -20,21 +20,21 @@ Configuration uses `MONGODB_URI`, `MONGODB_DB`, `BETTER_AUTH_SECRET` and `BETTER
 ## Workflows
 
 - Discover current notices by keyword, region, category, organisation, originating portal, buyer, procurement type, value and deadline. Save opportunities, preview, compare up to four and export the displayed page.
-- Browse retained provider records and saved opportunities. Open a tender to recheck its source details; no polling or background refresh is performed.
+- Browse retained provider records and saved opportunities. Open a tender to recheck source details; optional scheduled monitoring runs through a separate worker.
 - Maintain company capabilities, financial/certification evidence and selected project references.
 - Attach a PDF to an existing tender, extract text and review AI suggestions with exact page citations. Private findings do not overwrite published source facts.
 - Optionally transfer a tender's attachments through the [Firefox extension](extension/README.md), using your browser's authenticated source session. Credentials stay in the browser.
-- Review eligibility, record separate human evidence judgments, and prepare bids with tasks, responsibility labels, deadlines and CSV checklists.
-- Track saved tender deadlines, tasks, source observation changes and in-app notifications.
+- Review unified eligibility evidence, record human judgments without AI, and turn gaps into linked preparation tasks. Track readiness and decision/submission records.
+- Track deadlines, source changes and reminders, export calendar events, and configure optional email delivery.
 - Start profile matching to see 10 tender cards immediately, with spinners while their AI explanations load. Scroll for the next ten cards and their explanations.
 
 There is no standalone tender import, spreadsheet ingestion, manual amendment import, award-results page, old catalogue matcher or alternate-source downloader. Submitted/won/lost are personal tracking statuses; official outcomes must be verified on the originating portal. The originating-portal filter operates within the sole provider feed.
 
 ## Documents and AI
 
-In a tender, open **Analyze documents → Upload a PDF**, or **Documents → Set up the Firefox extension**. Selected PDF text is stored privately and can be analyzed after choosing pages. Only capability text and selected projects are shared for AI review; financial checks remain local. Use public or non-sensitive inputs with the configured free-tier demo.
+In a tender, open **Documents & review → Upload a PDF**, or expand **Transfer attachments from the source portal**. PDFs and extracted text are retained privately; analyze selected ranges or remaining readable pages. Only capability text and selected projects are shared for AI review; financial checks remain local. Use public or non-sensitive inputs with the configured free-tier demo.
 
-PDF limits: 20 MB, 250 pages, 25,000 characters/page and 700,000 characters/document. Analysis accepts up to 30 pages and 120,000 characters per run. No OCR or Word conversion. Local uploads extract in the browser; transferred PDFs extract in a bounded server worker.
+PDF limits: 20 MB, 250 pages, 25,000 characters/page and 700,000 characters/document. Analysis accepts up to 30 pages and 120,000 characters per run. Explicit local English OCR is available for selected scanned pages; Word conversion is not supported. PDFs extract in a bounded server worker. Original PDFs are retained privately for citation viewing.
 
 ZIP limits: 25 MB compressed, 100 entries, 100 MB expanded total and 20 MB/file. Transferred files expire after 24 hours; extracted text remains private. Other file formats are download-only. The real signed-in Firefox upstream download still requires a manual smoke check.
 
@@ -62,6 +62,10 @@ See [implementation notes](docs/IMPLEMENTATION_NOTES.md), [source coverage](docs
 
 ## Boundaries
 
-The app does not submit official bids, deliver email/push notifications, provide team assignments or promise complete awards/amendment/eligibility coverage. Unknown source facts remain unknown. Date-only values do not establish a precise closing time. Matching selects up to 30 notices by profile-keyword relevance from at most 150 retrieved metadata candidates. It loads ten cards at a time and generates explanations only for loaded cards; relevance is not qualification.
+The app does not submit official bids, provide push notifications or team assignments or promise complete awards/amendment/eligibility coverage. Unknown source facts remain unknown. Date-only values do not establish a precise closing time. Matching selects up to 30 notices by profile-keyword relevance from at most 150 retrieved metadata candidates. It loads ten cards at a time and generates explanations only for loaded cards; relevance is not qualification.
 
-The local prototype has bounded reads (2,000 retained tenders, 200 bids, 50 notifications and 50 versions). Source concurrency is process-local, not a distributed ingestion service. There is no deployment, billing integration or scheduled ingestion.
+The local prototype has bounded reads (2,000 retained tenders, 200 bids, 50 notifications and 50 versions). Source concurrency is process-local, not a distributed ingestion service. There is no deployment or billing integration. Optional scheduled checks require the monitoring worker.
+
+## Improved workflows
+
+See [feature workflows](docs/FEATURE_WORKFLOWS.md) for readiness, reusable evidence, page coverage, OCR, saved searches, decision records and reminders. Run `npm run monitor` for one check or `npm run monitor -- --watch` for the continuous worker. Email defaults to a private local sink; SMTP delivery requires configuration.

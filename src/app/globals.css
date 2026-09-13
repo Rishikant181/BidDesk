@@ -43,3 +43,34 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #29
 @media(max-width:760px){.day>.event-count{display:block}}
 
 .matching-toolbar{margin-bottom:var(--space-3)}.matching-toolbar:empty{display:none}
+
+/* Evidence and document workflows */
+.page-status-grid{display:flex;flex-wrap:wrap;gap:8px;max-height:240px;overflow:auto;margin:16px 0}.document-canvas{display:block;max-width:100%;height:auto;margin:16px auto}.document-coverage{border:1px solid var(--line);padding:16px;border-radius:12px}.readiness-compact{font-size:14px}.readiness-compact h3{font-size:16px}.readiness-compact ul{padding-left:18px}.form-panel details>summary{cursor:pointer;padding:8px 0}.form-panel pre{overflow-wrap:anywhere;white-space:pre-wrap}select[multiple]{min-height:90px}
+
+/* Shared vertical rhythm for form content. Keep native disclosures outside the
+   flex container so closed panels continue to hide their contents. */
+.form-flow{display:flex;flex-direction:column;gap:16px;min-width:0}
+.form-flow>:not(dialog),.form-flow>:is(label,.checkbox-label,.form-grid,.info-box,.section-header,.mt){margin-top:0;margin-bottom:0}
+.form-flow>label.checkbox-label{margin-top:0;margin-bottom:0}
+.form-flow>.section-header{padding:0;flex-wrap:wrap}
+.ai-panel.form-flow>.section-header{margin:0}
+.matching-layout{gap:24px}
+.form-flow>.button{align-self:flex-start;max-width:100%;white-space:normal}
+.form-flow>h3:not(:first-child){padding-top:8px}
+.form-flow>.row.wrap>.button,.form-flow>.page-actions>.button{max-width:100%;white-space:normal}
+.form-panel .form-grid>label,.form-grid>label{margin-top:0;min-width:0}
+.disclosure-body{padding-top:16px}
+.compact-flow{gap:12px}
+.section-spacing{margin:0 0 24px}
+.section-divider{border-top:1px solid var(--line);padding-top:20px}
+.bounded-field{width:100%;max-width:460px}
+.readiness-compact.form-flow{gap:12px;margin-top:16px}
+.readiness-compact>.section-header{align-items:flex-start}
+.readiness-compact .badge{white-space:normal}
+.document-coverage+.small-text{margin-top:16px}
+.form-flow .checkbox-label{align-items:flex-start}
+.form-flow .checkbox-label>input[type=checkbox]{margin-top:4px}
+@media(max-width:760px){.overview-rail{display:flex}.form-flow>.section-header{flex-direction:column;align-items:flex-start}.form-flow>.row.between{flex-wrap:wrap}.form-flow>.button{width:auto}.form-flow .form-grid{grid-template-columns:minmax(0,1fr)}}
+
+.auth-form>.error{margin-top:16px}
+@media(max-width:760px){.auth-layout{grid-template-rows:auto 1fr}.auth-main{align-items:flex-start}}
