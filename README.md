@@ -36,6 +36,8 @@ In a tender, open **Documents & review → Upload a PDF**, or expand **Transfer 
 
 PDF limits: 20 MB, 250 pages, 25,000 characters/page and 700,000 characters/document. Analysis accepts up to 30 pages and 120,000 characters per run. Explicit local English OCR is available for selected scanned pages; Word conversion is not supported. PDFs extract in a bounded server worker. Original PDFs are retained privately for citation viewing.
 
+Hosted extension pairing uses the HTTPS origin in `BETTER_AUTH_URL`; Chrome requests access to that site when transferring. Reload the extension after updating. Hosted file storage and upload limits still require deployment work.
+
 ZIP limits: 25 MB compressed, 100 entries, 100 MB expanded total and 20 MB/file. Transferred files expire after 24 hours; extracted text remains private. Other file formats are download-only. The real signed-in Chrome upstream download still requires a manual smoke check.
 
 ## Verify

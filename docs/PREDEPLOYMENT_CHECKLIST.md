@@ -6,7 +6,7 @@ Use a private staging installation with the intended hosting configuration and a
 
 ## Resolve before full-feature deployment
 
-- Chrome attachment transfer currently rejects non-localhost destinations in both the pairing API and extension. Hosted support needs implementation and testing; otherwise remove/disable that hosted action and verify manual download/upload as the supported path.
+- Chrome attachment transfer supports the exact HTTPS origin configured in `BETTER_AUTH_URL`, with optional Chrome permission for that site. Test the deployed origin, permission denial/retry, and expired/reused grants. Persistent archive/PDF storage and host upload limits still need resolution; URL support alone does not make Vercel transfers operational.
 - Original PDFs are private filesystem files, separate from MongoDB. Confirm persistent storage for `BIDDESK_FILE_ROOT` (or the default `.local/documents`), private permissions, and access from every app instance that serves files. Do not assume a database backup includes PDFs.
 - Monitoring needs a separate worker (`npm run monitor -- --watch` or scheduled single runs). Starting the web app does not start it. Configure worker supervision, the same intended database, and real SMTP if email is enabled; the default mail sink does not send messages.
 - The runtime must support the Node application, PDF/OCR subprocesses, native rendering dependencies and their resource needs. Test the actual packaged deployment. The current start command binds to `127.0.0.1`; confirm the hosting proxy/container can reach it or adjust the binding for that environment.

@@ -80,3 +80,7 @@ The configured workspace database and private configuration were not changed. No
 ## Chrome extension conversion — 13 September 2026
 
 Typecheck, lint, 67 unit tests and production build pass. The existing TenderHut attachment journey passes, and `tests/e2e/chrome-extension.spec.ts` loads the actual downloadable package in a persistent Chromium context. It verifies Chrome setup UI, popup validation, service-worker messaging, browser-cookie fixture refresh, bearer-authenticated fixture ZIP download, transfer to the real isolated app endpoint and consumed-code rejection. No real TenderHut session was used. Unit tests also compare the ZIP contents with the source files to prevent distributing stale extension code.
+
+## Hosted extension URL support — 13 September 2026
+
+Production build, typecheck and lint pass. All 84 then-existing unit tests passed, followed by seven focused passing extension/origin tests after adding the popup permission test (85 cases total). The actual distributed Chrome extension passed the isolated production browser journey, including byte transfer and consumed-grant rejection. Hosted URL/configuration, exact-site permission, denial/retry and sender validation use unit fixtures; real hosted transfers remain unverified and Vercel storage/payload adaptations remain outstanding.
